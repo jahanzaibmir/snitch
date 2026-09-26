@@ -1,4 +1,4 @@
-# Snitch 🔍
+# Snitch
 
 Secret & credential leak scanner for Git repositories and codebases.
 
