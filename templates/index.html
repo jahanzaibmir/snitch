@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Snitch — Secret Leak Scanner</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/main.css" />
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <span class="logo">Snitch<span class="logo-dot">.</span></span>
+      <div class="nav-links">
+        <a href="#how">How it works</a>
+        <a href="#patterns">Coverage</a>
+        <span class="nav-badge">Free & Open Source</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-tag">Secret Detection Engine</div>
+      <h1 class="hero-headline">
+        Your codebase is<br />
+        <span class="accent">leaking secrets.</span>
+      </h1>
+      <p class="hero-sub">
+        Snitch scans Git repositories and codebases for accidentally committed
+        API keys, passwords, tokens, and private keys — before attackers find them first.
+      </p>
+
+      <!-- SCAN FORM -->
+      <div class="scan-card" id="scan-card">
+        <div class="tab-row">
+          <button class="tab active" id="tab-url" onclick="switchTab('url')">GitHub / GitLab URL</button>
+          <button class="tab" id="tab-upload" onclick="switchTab('upload')">Upload ZIP</button>
+        </div>
+
+        <!-- URL input -->
+        <div id="panel-url" class="panel active">
+          <div class="input-row">
+            <input
+              type="text"
+              id="repo-url"
+              class="text-input"
+              placeholder="https://github.com/username/repo"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <button class="btn-primary" onclick="startUrlScan()">
+              Scan
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </button>
+          </div>
+          <p class="input-hint">Public repositories only. Private repos require local ZIP upload.</p>
+        </div>
+
+        <!-- Upload input -->
+        <div id="panel-upload" class="panel">
+          <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()"
+               ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragleave="handleDragLeave(event)">
+            <div class="drop-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+            </div>
+            <p class="drop-text">Drop your <code>.zip</code> here or click to browse</p>
+            <p class="drop-hint">Max 50MB</p>
+          </div>
+          <input type="file" id="file-input" accept=".zip" style="display:none" onchange="handleFileSelect(event)" />
+          <div id="file-selected" class="file-selected hidden"></div>
+          <button class="btn-primary btn-full" id="upload-btn" onclick="startUploadScan()" disabled>
+            Scan Archive
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Error -->
+        <div id="scan-error" class="scan-error hidden"></div>
+      </div>
+    </div>
+
+    <!-- BG grid decoration -->
+    <div class="hero-grid" aria-hidden="true"></div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="section" id="how">
+    <div class="section-inner">
+      <h2 class="section-title">How Snitch works</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">01</div>
+          <h3>Submit your repo</h3>
+          <p>Paste a GitHub/GitLab URL or upload a ZIP archive of your codebase.</p>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="step-num">02</div>
+          <h3>Deep scan</h3>
+          <p>Snitch runs 30+ regex patterns with entropy analysis across every file and commit.</p>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="step-num">03</div>
+          <h3>Actionable report</h3>
+          <p>Every finding gets a severity rating, exact location, and a remediation step.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COVERAGE -->
+  <section class="section section-alt" id="patterns">
+    <div class="section-inner">
+      <h2 class="section-title">What Snitch catches</h2>
+      <div class="coverage-grid">
+        <div class="coverage-item"><span class="cov-icon">☁</span> AWS / GCP / Azure keys</div>
+        <div class="coverage-item"><span class="cov-icon">🐙</span> GitHub / GitLab tokens</div>
+        <div class="coverage-item"><span class="cov-icon">💳</span> Stripe / PayPal secrets</div>
+        <div class="coverage-item"><span class="cov-icon">📱</span> Twilio / SendGrid / Mailgun</div>
+        <div class="coverage-item"><span class="cov-icon">🔑</span> RSA / EC / SSH private keys</div>
+        <div class="coverage-item"><span class="cov-icon">🗃</span> Database connection strings</div>
+        <div class="coverage-item"><span class="cov-icon">💬</span> Slack / Discord / Telegram</div>
+        <div class="coverage-item"><span class="cov-icon">🤖</span> OpenAI / Anthropic API keys</div>
+        <div class="coverage-item"><span class="cov-icon">🔐</span> JWT tokens / OAuth secrets</div>
+        <div class="coverage-item"><span class="cov-icon">📜</span> PGP private key blocks</div>
+        <div class="coverage-item"><span class="cov-icon">🧬</span> HuggingFace tokens</div>
+        <div class="coverage-item"><span class="cov-icon">⚙</span> Generic high-entropy secrets</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <span class="logo">Snitch<span class="logo-dot">.</span></span>
+      <p>Built for developers. Catches what code review misses.</p>
+    </div>
+  </footer>
+
+  <!-- SCANNING OVERLAY -->
+  <div id="scan-overlay" class="overlay hidden">
+    <div class="overlay-card">
+      <div class="overlay-logo">Snitch<span class="logo-dot">.</span></div>
+      <div class="spinner"></div>
+      <div class="overlay-stage" id="overlay-stage">Initialising...</div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+      </div>
+      <div class="overlay-pct" id="overlay-pct">0%</div>
+    </div>
+  </div>
+
+  <script src="/static/js/main.js"></script>
+</body>
+</html>

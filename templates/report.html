@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Snitch Report</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/main.css" />
+  <link rel="stylesheet" href="/static/css/report.css" />
+</head>
+<body class="report-body">
+
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="/" class="logo">Snitch<span class="logo-dot">.</span></a>
+      <div class="nav-links">
+        <span class="report-id-badge" id="report-id-badge">Loading...</span>
+        <button class="btn-outline" onclick="downloadJSON()">Export JSON</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- LOADING STATE -->
+  <div id="loading-state" class="report-loading">
+    <div class="spinner"></div>
+    <p>Loading report...</p>
+  </div>
+
+  <!-- REPORT CONTENT -->
+  <main id="report-content" class="report-main hidden">
+
+    <!-- SUMMARY BAR -->
+    <section class="summary-bar">
+      <div class="summary-inner">
+        <div class="summary-source" id="summary-source"></div>
+        <div class="summary-counts">
+          <div class="sev-count critical" id="count-critical">
+            <span class="count-num">0</span>
+            <span class="count-label">Critical</span>
+          </div>
+          <div class="sev-count high" id="count-high">
+            <span class="count-num">0</span>
+            <span class="count-label">High</span>
+          </div>
+          <div class="sev-count medium" id="count-medium">
+            <span class="count-num">0</span>
+            <span class="count-label">Medium</span>
+          </div>
+          <div class="sev-count low" id="count-low">
+            <span class="count-num">0</span>
+            <span class="count-label">Low</span>
+          </div>
+          <div class="sev-count total" id="count-total">
+            <span class="count-num">0</span>
+            <span class="count-label">Total</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STATS ROW -->
+    <section class="stats-row">
+      <div class="stats-inner">
+        <div class="stat-item">
+          <span class="stat-val" id="stat-files-scanned">—</span>
+          <span class="stat-label">Files scanned</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-val" id="stat-files-skipped">—</span>
+          <span class="stat-label">Files skipped</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-val" id="stat-generated">—</span>
+          <span class="stat-label">Scanned at</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- FILTERS -->
+    <section class="filter-bar">
+      <div class="filter-inner">
+        <span class="filter-label">Filter</span>
+        <button class="filter-btn active" onclick="setFilter('ALL', this)">All</button>
+        <button class="filter-btn" onclick="setFilter('CRITICAL', this)">Critical</button>
+        <button class="filter-btn" onclick="setFilter('HIGH', this)">High</button>
+        <button class="filter-btn" onclick="setFilter('MEDIUM', this)">Medium</button>
+        <button class="filter-btn" onclick="setFilter('LOW', this)">Low</button>
+        <div class="filter-search-wrap">
+          <input type="text" id="search-input" class="filter-search" placeholder="Search file, type..." oninput="applyFilters()" />
+        </div>
+      </div>
+    </section>
+
+    <!-- NO FINDINGS -->
+    <section id="no-findings" class="no-findings hidden">
+      <div class="no-findings-inner">
+        <div class="no-findings-icon">✓</div>
+        <h2>No secrets found</h2>
+        <p>Snitch scanned your codebase and found nothing suspicious. Keep it that way.</p>
+      </div>
+    </section>
+
+    <!-- FINDINGS LIST -->
+    <section class="findings-section">
+      <div class="findings-inner" id="findings-list"></div>
+    </section>
+
+  </main>
+
+  <script>
+    const SCAN_ID = "{{ scan_id }}";
+  </script>
+  <script src="/static/js/report.js"></script>
+</body>
+</html>
