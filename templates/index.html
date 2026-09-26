@@ -24,9 +24,8 @@
 
 <section class="hero">
   <div class="hero-inner">
-    <div class="hero-eyebrow"><span class="eyebrow-dot"></span>Secret Detection Engine</div>
     <h1 class="hero-headline">Your code is<br/><span class="accent">leaking secrets.</span></h1>
-    <p class="hero-sub">Snitch scans your GitHub repos and code for accidentally committed API keys, passwords, and private keys before someone exploits them.</p>
+    <p class="hero-sub">Snitch scans your GitHub repos and code for accidentally committed API keys, passwords, and private keys — before someone exploits them.</p>
 
     <div class="scan-card">
       <div class="tab-row">
@@ -36,7 +35,9 @@
 
       <div id="panel-url" class="panel active">
         <div class="input-row">
-          <input type="text" id="repo-url" class="text-input" placeholder="https://github.com/username/repo" autocomplete="off" spellcheck="false"/>
+          <input type="text" id="repo-url" class="text-input"
+                 placeholder="https://github.com/username/repo"
+                 autocomplete="off" spellcheck="false"/>
           <button class="btn-primary" onclick="startUrlScan()">
             Scan now
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -48,14 +49,18 @@
       <div id="panel-upload" class="panel">
         <div class="drop-zone" id="drop-zone"
              onclick="document.getElementById('file-input').click()"
-             ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragleave="handleDragLeave(event)">
+             ondragover="handleDragOver(event)"
+             ondrop="handleDrop(event)"
+             ondragleave="handleDragLeave(event)">
           <div class="drop-icon">
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
             </svg>
           </div>
           <p class="drop-text">Drop any file here or click to browse</p>
-          <p class="drop-hint">ZIP, folders zipped, .py .js .c .txt .env and more. Max 50 MB.</p>
+          <p class="drop-hint">ZIP, .py, .js, .env, .txt and more — Max 50 MB</p>
         </div>
         <input type="file" id="file-input" style="display:none" onchange="handleFileSelect(event)"/>
         <div id="file-selected" class="file-selected hidden"></div>
@@ -92,7 +97,7 @@
       <div class="step">
         <div class="step-num">02</div>
         <h3>We scan everything</h3>
-        <p>30 plus patterns run across every file and every git commit, with smart filtering to cut false alarms.</p>
+        <p>30+ patterns run across every file and every git commit, with smart filtering to cut false alarms.</p>
       </div>
       <div class="step-arrow">→</div>
       <div class="step">
@@ -109,17 +114,17 @@
     <h2 class="section-title">What Snitch catches</h2>
     <div class="coverage-grid">
       <div class="coverage-item"><span class="cov-icon">☁</span>AWS, GCP and Azure keys</div>
-      <div class="coverage-item"><span class="cov-icon">🐙</span>GitHub and GitLab tokens</div>
+      <div class="coverage-item"><span class="cov-icon">🔗</span>GitHub and GitLab tokens</div>
       <div class="coverage-item"><span class="cov-icon">💳</span>Stripe and PayPal secrets</div>
       <div class="coverage-item"><span class="cov-icon">📱</span>Twilio, SendGrid and Mailgun</div>
       <div class="coverage-item"><span class="cov-icon">🔑</span>RSA, EC and SSH private keys</div>
-      <div class="coverage-item"><span class="cov-icon">🗃</span>Database connection strings</div>
+      <div class="coverage-item"><span class="cov-icon">🗄</span>Database connection strings</div>
       <div class="coverage-item"><span class="cov-icon">💬</span>Slack, Discord and Telegram</div>
       <div class="coverage-item"><span class="cov-icon">🤖</span>OpenAI and Anthropic keys</div>
       <div class="coverage-item"><span class="cov-icon">🔐</span>JWT tokens and OAuth secrets</div>
       <div class="coverage-item"><span class="cov-icon">📜</span>PGP private key blocks</div>
       <div class="coverage-item"><span class="cov-icon">🧬</span>HuggingFace tokens</div>
-      <div class="coverage-item"><span class="cov-icon">⚙</span>Any other high entropy secrets</div>
+      <div class="coverage-item"><span class="cov-icon">⚙</span>Any other high-entropy secrets</div>
     </div>
   </div>
 </section>
