@@ -5,136 +5,132 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>Snitch — Scan Report</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>"/>
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="/static/css/main.css"/>
   <link rel="stylesheet" href="/static/css/report.css"/>
 </head>
 <body class="report-body">
 
-  <!-- ── NAV ─────────────────────────────────────────────────────── -->
   <nav class="nav">
     <div class="nav-inner">
       <a href="/" class="logo">Snitch<span class="logo-dot">.</span></a>
-      <div class="nav-links">
+      <div class="nav-links nav-actions">
         <span class="report-id-badge" id="report-id-badge">Loading…</span>
+        <button class="btn-outline" onclick="copyLink(this)">Copy link</button>
+        <button class="btn-outline" onclick="exportCSV()">Export CSV</button>
         <button class="btn-outline" onclick="downloadJSON()">Export JSON</button>
+        <button class="btn-outline" onclick="window.print()">Print</button>
+        <a href="/" class="btn-primary">New scan</a>
       </div>
     </div>
   </nav>
 
-  <!-- ── LOADING ──────────────────────────────────────────────────── -->
   <div id="loading-state" class="report-loading">
     <div class="spinner"></div>
-    <p>Loading report…</p>
+    <p id="loading-text">Loading report…</p>
+    <div class="progress-track slim hidden" id="loading-track"><div class="progress-fill" id="loading-fill" style="width:0%"></div></div>
+    <p class="loading-msg hidden" id="loading-msg"></p>
   </div>
 
-  <!-- ── REPORT (hidden until JS populates it) ───────────────────── -->
+  <div id="error-state" class="report-error hidden">
+    <div class="err-icon">!</div>
+    <h2 id="error-title">Something went wrong</h2>
+    <p id="error-detail"></p>
+    <a href="/" class="btn-primary">← Back to home</a>
+  </div>
+
   <div id="report-content" class="hidden">
 
-    <!-- Header band: source URL + severity scoreboard -->
     <div class="report-header">
       <div class="report-header-inner">
-        <div>
+        <div class="report-head-left">
+          <div id="report-risk"></div>
           <div class="report-source" id="report-source"></div>
-          <div class="report-meta"   id="report-meta"></div>
+          <div class="report-meta" id="report-meta"></div>
+          <p class="exec-summary" id="exec-summary"></p>
         </div>
         <div class="severity-scoreboard">
-          <div class="score-cell critical">
-            <span class="score-num" id="cnt-critical">0</span>
-            <span class="score-lbl">Critical</span>
-          </div>
-          <div class="score-cell high">
-            <span class="score-num" id="cnt-high">0</span>
-            <span class="score-lbl">High</span>
-          </div>
-          <div class="score-cell medium">
-            <span class="score-num" id="cnt-medium">0</span>
-            <span class="score-lbl">Medium</span>
-          </div>
-          <div class="score-cell low">
-            <span class="score-num" id="cnt-low">0</span>
-            <span class="score-lbl">Low</span>
-          </div>
-          <div class="score-cell total">
-            <span class="score-num" id="cnt-total">0</span>
-            <span class="score-lbl">Total</span>
-          </div>
+          <div class="score-cell risk"><span class="score-num" id="risk-score">0</span><span class="score-lbl">Risk / 100</span></div>
+          <div class="score-cell critical"><span class="score-num" id="cnt-critical">0</span><span class="score-lbl">Critical</span></div>
+          <div class="score-cell high"><span class="score-num" id="cnt-high">0</span><span class="score-lbl">High</span></div>
+          <div class="score-cell medium"><span class="score-num" id="cnt-medium">0</span><span class="score-lbl">Medium</span></div>
+          <div class="score-cell low"><span class="score-num" id="cnt-low">0</span><span class="score-lbl">Low</span></div>
+          <div class="score-cell total"><span class="score-num" id="cnt-total">0</span><span class="score-lbl">Total</span></div>
         </div>
       </div>
     </div>
 
-    <!-- Dashboard grid: sidebar + main -->
     <div class="report-main">
       <div class="dash-grid">
 
-        <!-- ── SIDEBAR ──────────────────────────────────────────── -->
         <aside class="dash-sidebar">
-
           <div class="dash-card">
             <div class="dash-card-title">Severity breakdown</div>
             <div class="donut-wrap">
-              <canvas id="donut-chart" width="160" height="160"></canvas>
+              <canvas id="donut-chart" width="160" height="160" aria-label="Severity breakdown chart"></canvas>
               <div class="donut-legend" id="donut-legend"></div>
             </div>
           </div>
 
           <div class="dash-card">
-            <div class="dash-card-title">By category</div>
+            <div class="dash-card-title">Findings by category</div>
             <div id="category-bars"></div>
           </div>
 
           <div class="dash-card">
-            <div class="dash-card-title">Scan stats</div>
+            <div class="dash-card-title">Scan statistics</div>
             <div class="stat-grid" id="stat-grid"></div>
           </div>
 
           <div class="dash-card">
-            <div class="dash-card-title">Top affected files</div>
+            <div class="dash-card-title">Most affected files</div>
             <div id="top-files"></div>
           </div>
-
         </aside>
 
-        <!-- ── MAIN CONTENT ─────────────────────────────────────── -->
         <div class="dash-main">
-
-          <!-- Filter bar -->
-          <div class="filter-bar">
+          <div class="filter-bar" id="filter-bar">
             <div class="filter-inner">
-              <button class="filter-btn active" onclick="setFilter('ALL',this)">
-                All <span class="filter-count" id="filter-count"></span>
-              </button>
-              <button class="filter-btn" onclick="setFilter('CRITICAL',this)">Critical</button>
-              <button class="filter-btn" onclick="setFilter('HIGH',this)">High</button>
-              <button class="filter-btn" onclick="setFilter('MEDIUM',this)">Medium</button>
-              <button class="filter-btn" onclick="setFilter('LOW',this)">Low</button>
+              <button class="filter-btn active" data-sev="ALL" onclick="setFilter('ALL', this)">All <span class="filter-count"></span></button>
+              <button class="filter-btn" data-sev="CRITICAL" onclick="setFilter('CRITICAL', this)">Critical <span class="filter-count"></span></button>
+              <button class="filter-btn" data-sev="HIGH" onclick="setFilter('HIGH', this)">High <span class="filter-count"></span></button>
+              <button class="filter-btn" data-sev="MEDIUM" onclick="setFilter('MEDIUM', this)">Medium <span class="filter-count"></span></button>
+              <button class="filter-btn" data-sev="LOW" onclick="setFilter('LOW', this)">Low <span class="filter-count"></span></button>
+
+              <select id="sort-select" class="sort-select" onchange="setSort(this.value)">
+                <option value="severity">Sort: Severity</option>
+                <option value="file">Sort: File path</option>
+                <option value="entropy">Sort: Entropy</option>
+                <option value="category">Sort: Category</option>
+              </select>
+
+              <button class="mini-btn" onclick="expandAll(true)">Expand all</button>
+              <button class="mini-btn" onclick="expandAll(false)">Collapse all</button>
+
               <input type="text" id="search-input" class="filter-search"
-                     placeholder="Search file, type…"
-                     oninput="applyFilters()"/>
+                     placeholder="Search file or type…  ( / )" oninput="applyFilters()"/>
             </div>
           </div>
 
-          <!-- No-findings state -->
           <div id="no-findings" class="no-findings hidden">
             <div class="no-findings-icon">✓</div>
             <h2>No secrets found</h2>
-            <p>Snitch scanned your codebase and found nothing suspicious. Keep it that way.</p>
+            <p>Snitch went through every file and found nothing that looks like a leaked credential. Keep it that way.</p>
           </div>
 
-          <!-- Findings list (populated by report.js) -->
-          <div id="findings-list"></div>
+          <div id="no-matches" class="no-findings compact hidden">
+            <h2>No matching findings</h2>
+            <p>Nothing matches your current filters. Try clearing the search or picking another severity.</p>
+          </div>
 
-        </div><!-- /.dash-main -->
-      </div><!-- /.dash-grid -->
-    </div><!-- /.report-main -->
+          <div id="findings-list" class="findings-list"></div>
+        </div>
 
-  </div><!-- /#report-content -->
+      </div>
+    </div>
+  </div>
 
-  <!-- Inject scan ID from Jinja2 -->
   <script>
-    const SCAN_ID = "{{ scan_id }}";
-
+    window.SCAN_ID = {{ scan_id|tojson }};
     function downloadJSON() {
       window.open('/api/report/' + SCAN_ID + '/download/json', '_blank');
     }

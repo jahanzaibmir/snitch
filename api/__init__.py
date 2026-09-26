@@ -1,1 +1,1 @@
-# Snitch API package
+# Snitch - API package

@@ -5,6 +5,7 @@ Uses gitpython to walk commits and scan diffs.
 """
 
 import os
+import re
 import tempfile
 from pathlib import Path
 
@@ -18,20 +19,19 @@ from .scanner import scan_line, build_report
 from .patterns import SKIP_EXTENSIONS
 
 
-MAX_COMMITS = 500          # Don't walk more than this many commits
-MAX_DIFF_LINE_LENGTH = 500 # Skip extremely long lines in diffs (minified code)
+MAX_COMMITS = 500            # Don't walk more than this many commits
+CLONE_DEPTH = MAX_COMMITS    # FIX: was depth=100 while UI claimed 500 commits
+MAX_DIFF_LINE_LENGTH = 500   # Skip extremely long lines in diffs (minified code)
+
+_HUNK_RE = re.compile(r"^@@.*?\+(\d+)")
 
 
 def clone_repo(url: str, target_dir: str) -> tuple[bool, str]:
-    """
-    Clone a remote git repo to target_dir.
-    Returns (success: bool, message: str)
-    """
+    """Clone a remote git repo to target_dir. Returns (success, message)."""
     if not GIT_AVAILABLE:
         return False, "gitpython not installed"
-    
     try:
-        git.Repo.clone_from(url, target_dir, depth=100)  # shallow clone, last 100 commits
+        git.Repo.clone_from(url, target_dir, depth=CLONE_DEPTH)
         return True, "Cloned successfully"
     except git.exc.GitCommandError as e:
         return False, str(e)
@@ -40,30 +40,25 @@ def clone_repo(url: str, target_dir: str) -> tuple[bool, str]:
 
 
 def scan_git_history(repo_path: str | Path, progress_callback=None) -> list[dict]:
-    """
-    Walk git commit history and scan each commit's diff for secrets.
-    Returns list of findings (with commit metadata attached).
-    """
+    """Walk git commit history and scan each commit's diff for secrets."""
     if not GIT_AVAILABLE:
         return []
-    
+
     findings = []
     repo_path = Path(repo_path).resolve()
-    
+
     try:
         repo = git.Repo(str(repo_path))
-    except git.exc.InvalidGitRepositoryError:
-        return []
     except Exception:
         return []
-    
+
     try:
         commits = list(repo.iter_commits('HEAD', max_count=MAX_COMMITS))
     except Exception:
         return []
-    
+
     total = len(commits)
-    
+
     for i, commit in enumerate(commits):
         if progress_callback:
             progress_callback(
@@ -72,122 +67,107 @@ def scan_git_history(repo_path: str | Path, progress_callback=None) -> list[dict
                 done=i,
                 total=total,
             )
-        
-        try:
-            diff_text = _get_commit_diff(repo, commit)
-        except Exception:
-            continue
-        
-        if not diff_text:
-            continue
-        
-        for line_number, line in enumerate(diff_text.splitlines(), start=1):
-            # Only scan added lines (lines starting with '+', not '+++')
-            if not line.startswith('+') or line.startswith('+++'):
-                continue
-            
-            # Strip the leading '+' for scanning
-            actual_line = line[1:]
-            
-            if len(actual_line) > MAX_DIFF_LINE_LENGTH:
-                continue
-            
-            line_findings = scan_line(actual_line, line_number, f"[git:{commit.hexsha[:8]}]")
-            
-            for f in line_findings:
-                f["in_git_history"] = True
-                f["commit_hash"] = commit.hexsha[:8]
-                f["commit_message"] = commit.message.strip()[:120]
-                f["commit_author"] = str(commit.author)
-                f["commit_date"] = commit.authored_datetime.isoformat()
-            
-            findings.extend(line_findings)
-    
+
+        # FIX: iterate per-file diffs so findings carry the REAL file path
+        # and line number (parsed from @@ hunk headers), not "[git:hash]".
+        for file_path, diff_text in _iter_commit_diffs(repo, commit):
+            line_no = 0
+            for line in diff_text.splitlines():
+                if line.startswith("@@"):
+                    m = _HUNK_RE.search(line)
+                    line_no = int(m.group(1)) - 1 if m else 0
+                    continue
+                if line.startswith(("+++", "---")):
+                    continue
+                if line.startswith("-"):
+                    continue  # removed lines don't advance the new-file counter
+                line_no += 1
+                if not line.startswith("+"):
+                    continue  # context line — counted above, not scanned
+
+                actual_line = line[1:]
+                if len(actual_line) > MAX_DIFF_LINE_LENGTH:
+                    continue
+
+                for f in scan_line(actual_line, line_no, file_path):
+                    f["in_git_history"] = True
+                    f["commit_hash"] = commit.hexsha[:8]
+                    f["commit_message"] = commit.message.strip()[:120]
+                    f["commit_author"] = str(commit.author)
+                    f["commit_date"] = commit.authored_datetime.isoformat()
+                    findings.append(f)
+
     return findings
 
 
-def _get_commit_diff(repo: 'git.Repo', commit: 'git.Commit') -> str:
-    """Get the diff text for a commit."""
+def _iter_commit_diffs(repo: 'git.Repo', commit: 'git.Commit'):
+    """Yield (file_path, patch_text) for each changed file in a commit."""
     try:
         if commit.parents:
             diffs = commit.parents[0].diff(commit, create_patch=True)
         else:
-            # Initial commit — diff against empty tree
-            diffs = commit.diff(git.NULL_TREE, create_patch=True)
-        
-        diff_parts = []
-        for diff in diffs:
-            # Skip binary and skippable extensions
-            if diff.b_path:
-                ext = Path(diff.b_path).suffix.lower()
-                if ext in SKIP_EXTENSIONS:
-                    continue
-            
-            try:
-                if diff.diff:
-                    diff_parts.append(diff.diff.decode('utf-8', errors='replace'))
-            except Exception:
-                continue
-        
-        return '\n'.join(diff_parts)
+            diffs = commit.diff(git.NULL_TREE, create_patch=True)  # initial commit
     except Exception:
-        return ""
+        return
+
+    for diff in diffs:
+        path = diff.b_path or diff.a_path
+        if not path or Path(path).suffix.lower() in SKIP_EXTENSIONS:
+            continue
+        try:
+            text = diff.diff.decode("utf-8", errors="replace") if diff.diff else ""
+        except Exception:
+            continue
+        if text:
+            yield path, text
 
 
-def scan_repo_full(
-    repo_url_or_path: str,
-    progress_callback=None,
-) -> dict:
+def scan_repo_full(repo_url_or_path: str, progress_callback=None) -> dict:
     """
     Full repo scan: clone (if URL), scan files, scan git history.
-    Returns merged report.
+    Returns merged report. (The API orchestrates these phases itself;
+    this helper remains for CLI / library use.)
     """
     from .scanner import scan_directory
     import shutil
-    
+
     is_url = repo_url_or_path.startswith(('http://', 'https://', 'git@'))
-    
     temp_dir = None
+
     try:
         if is_url:
             temp_dir = tempfile.mkdtemp(prefix='snitch_')
             if progress_callback:
-                progress_callback(stage="clone", current="Cloning repository...", done=0, total=1)
-            
+                progress_callback(stage="clone", current="Cloning repository…", done=0, total=1)
+
             success, msg = clone_repo(repo_url_or_path, temp_dir)
             if not success:
                 return {"error": f"Clone failed: {msg}", "findings": [], "summary": {}}
-            
             repo_path = temp_dir
         else:
             repo_path = repo_url_or_path
-        
-        # Phase 1: scan current files
+
         if progress_callback:
-            progress_callback(stage="files", current="Scanning files...", done=0, total=1)
-        
-        file_report = scan_directory(repo_path, progress_callback=None)
-        
-        # Phase 2: scan git history
+            progress_callback(stage="files", current="Scanning files…", done=0, total=1)
+
+        # FIX: was progress_callback=None — per-file progress never reached the UI
+        file_report = scan_directory(repo_path, progress_callback=progress_callback)
+
         if progress_callback:
-            progress_callback(stage="git_history", current="Scanning git history...", done=0, total=1)
-        
+            progress_callback(stage="git_history", current="Scanning git history…", done=0, total=1)
+
         git_findings = scan_git_history(repo_path, progress_callback=progress_callback)
-        
-        # Merge findings
-        all_findings = file_report["findings"] + git_findings
-        
+
         merged_report = build_report(
-            findings=all_findings,
+            findings=file_report["findings"] + git_findings,
             files_scanned=file_report["stats"]["files_scanned"],
             files_skipped=file_report["stats"]["files_skipped"],
             files_total=file_report["stats"]["files_total"],
             source=repo_url_or_path,
         )
-        
         merged_report["git_commits_scanned"] = MAX_COMMITS
         return merged_report
-    
+
     finally:
         if temp_dir and os.path.exists(temp_dir):
             shutil.rmtree(temp_dir, ignore_errors=True)

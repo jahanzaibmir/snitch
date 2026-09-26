@@ -1,195 +1,306 @@
-'use strict';
+/* ═══════════════════════════════════════════════════════════
+   Snitch — landing page
+   Scan start, upload handling, live progress — plus recent
+   scan history stored in localStorage.
+   ═══════════════════════════════════════════════════════════ */
 
-// Tab switching
+const $ = (id) => document.getElementById(id);
+const MAX_UPLOAD_MB = 50;
+const POLL_INTERVAL_MS = 900;
+const POLL_TIMEOUT_MS = 15 * 60 * 1000;
+const RECENT_KEY = 'snitch_recent_scans';
+const RECENT_LIMIT = 6;
+
+let pollTimer = null;
+let selectedFile = null;
+let scanning = false;
+
+document.addEventListener('DOMContentLoaded', renderRecent);
+
+/* ── Tabs ─────────────────────────────────────────────── */
+
 function switchTab(tab) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('tab-' + tab).classList.add('active');
-  document.getElementById('panel-' + tab).classList.add('active');
-  clearError();
+  const isUrl = tab === 'url';
+  $('tab-url').classList.toggle('active', isUrl);
+  $('tab-upload').classList.toggle('active', !isUrl);
+  $('panel-url').classList.toggle('active', isUrl);
+  $('panel-upload').classList.toggle('active', !isUrl);
+  hideError();
 }
 
-// File handling
-let selectedFile = null;
+/* ── Inline errors ────────────────────────────────────── */
 
+function showError(msg) {
+  const box = $('scan-error');
+  box.textContent = msg;
+  box.classList.remove('hidden');
+}
+function hideError() {
+  $('scan-error').classList.add('hidden');
+}
+
+/* ── Repo URL scan ────────────────────────────────────── */
+
+async function startUrlScan() {
+  if (scanning) return;
+  hideError();
+
+  const url = $('repo-url').value.trim();
+  if (!url) return showError('Enter a repository URL first.');
+  if (!/^(https?:\/\/|git@)/i.test(url)) {
+    return showError('URL must start with https:// (or git@ for SSH).');
+  }
+
+  scanning = true;
+  showOverlay('Starting scan…', 1);
+  try {
+    const res = await fetch('/api/scan/url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || 'Could not start the scan.');
+    rememberScan(data.scan_id, url);
+    pollScan(data.scan_id);
+  } catch (err) {
+    scanning = false;
+    hideOverlay();
+    showError(err.message || 'Something went wrong.');
+  }
+}
+
+/* ── File upload ──────────────────────────────────────── */
+
+function handleFileSelect(e) {
+  setSelectedFile(e.target.files && e.target.files[0]);
+}
 function handleDragOver(e) {
   e.preventDefault();
-  document.getElementById('drop-zone').classList.add('drag-over');
+  $('drop-zone').classList.add('drag');
 }
 function handleDragLeave() {
-  document.getElementById('drop-zone').classList.remove('drag-over');
+  $('drop-zone').classList.remove('drag');
 }
 function handleDrop(e) {
   e.preventDefault();
-  document.getElementById('drop-zone').classList.remove('drag-over');
-  const f = e.dataTransfer.files[0];
-  if (f) applyFile(f);
-}
-function handleFileSelect(e) {
-  const f = e.target.files[0];
-  if (f) applyFile(f);
+  $('drop-zone').classList.remove('drag');
+  setSelectedFile(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]);
 }
 
-// Accept any file — zip, folder zip, txt, c, py, js, etc.
-// Backend handles zip extraction; other files get wrapped into a zip on the fly
-function applyFile(f) {
-  if (!f) return;
-  selectedFile = f;
-  const el = document.getElementById('file-selected');
-  el.textContent = '\u2713  ' + f.name + '  (' + fmtBytes(f.size) + ')';
-  el.classList.remove('hidden');
-  document.getElementById('upload-btn').removeAttribute('disabled');
-  clearError();
-}
+function setSelectedFile(file) {
+  hideError();
+  selectedFile = file || null;
+  const chip = $('file-selected');
+  const btn = $('upload-btn');
 
-function fmtBytes(b) {
-  if (b < 1024) return b + ' B';
-  if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
-  return (b / 1048576).toFixed(1) + ' MB';
-}
-
-// Scan via URL
-async function startUrlScan() {
-  const url = document.getElementById('repo-url').value.trim();
-  if (!url) { showError('Please enter a repository URL.'); return; }
-  if (!url.startsWith('https://github.com') && !url.startsWith('https://gitlab.com')) {
-    showError('Only GitHub and GitLab URLs are supported.'); return;
+  if (!selectedFile) {
+    chip.classList.add('hidden');
+    chip.innerHTML = '';
+    btn.disabled = true;
+    return;
   }
-  clearError();
-  showOverlay('Starting scan...');
-  try {
-    const fd = new FormData();
-    fd.append('url', url);
-    const r = await fetch('/api/scan/url', { method: 'POST', body: fd });
-    const d = await r.json();
-    if (!r.ok) throw new Error(d.detail || 'Request failed');
-    poll(d.scan_id);
-  } catch(e) { hideOverlay(); showError(e.message); }
+  if (selectedFile.size > MAX_UPLOAD_MB * 1024 * 1024) {
+    selectedFile = null;
+    chip.classList.add('hidden');
+    chip.innerHTML = '';
+    btn.disabled = true;
+    return showError('File is too large — the limit is ' + MAX_UPLOAD_MB + ' MB.');
+  }
+
+  const kb = selectedFile.size / 1024;
+  const size = kb >= 1024 ? (kb / 1024).toFixed(1) + ' MB' : Math.round(kb) + ' KB';
+  chip.innerHTML =
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' +
+    '<div class="fs-info"><div class="fs-name">' + escapeHtml(selectedFile.name) + '</div>' +
+    '<div class="fs-size">' + size + '</div></div>' +
+    '<button class="fs-remove" onclick="clearSelectedFile()" title="Remove file" aria-label="Remove file">✕</button>';
+  chip.classList.remove('hidden');
+  btn.disabled = false;
 }
 
-// Scan via upload — wraps non-zip files into a zip before sending
-async function startUploadScan() {
-  if (!selectedFile) { showError('Please pick a file first.'); return; }
-  clearError();
-  showOverlay('Uploading...');
-  try {
-    const fd = new FormData();
-    // If it's already a zip, send as-is. Otherwise wrap it.
-    if (selectedFile.name.endsWith('.zip')) {
-      fd.append('file', selectedFile, selectedFile.name);
-    } else {
-      const zip = await wrapInZip(selectedFile);
-      fd.append('file', zip, 'upload.zip');
+function clearSelectedFile() {
+  setSelectedFile(null);
+  $('file-input').value = '';
+}
+
+function startUploadScan() {
+  if (scanning || !selectedFile) return;
+  hideError();
+  scanning = true;
+
+  const fd = new FormData();
+  fd.append('file', selectedFile);
+
+  showOverlay('Uploading file…', 2);
+
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', '/api/scan/upload');
+  xhr.upload.onprogress = (e) => {
+    if (e.lengthComputable) {
+      updateOverlay('Uploading file…', Math.max(2, Math.round((e.loaded / e.total) * 7)));
     }
-    const r = await fetch('/api/scan/upload', { method: 'POST', body: fd });
-    const d = await r.json();
-    if (!r.ok) throw new Error(d.detail || 'Upload failed');
-    poll(d.scan_id);
-  } catch(e) { hideOverlay(); showError(e.message); }
+  };
+  xhr.onload = () => {
+    let data = {};
+    try { data = JSON.parse(xhr.responseText); } catch (_) { /* ignore */ }
+    if (xhr.status >= 200 && xhr.status < 300) {
+      rememberScan(data.scan_id, selectedFile.name);
+      pollScan(data.scan_id);
+    } else {
+      scanning = false;
+      hideOverlay();
+      showError(data.detail || 'Upload failed.');
+    }
+  };
+  xhr.onerror = () => {
+    scanning = false;
+    hideOverlay();
+    showError('Network error while uploading.');
+  };
+  xhr.send(fd);
 }
 
-// Wrap a single file into a zip using the browser's CompressionStream
-// Falls back to sending as a plain zip with the file contents
-async function wrapInZip(file) {
-  // Build a minimal ZIP file in memory
-  const content = await file.arrayBuffer();
-  const bytes = new Uint8Array(content);
-  const name = file.name;
-  const nameBytes = new TextEncoder().encode(name);
+/* ── Polling ──────────────────────────────────────────── */
 
-  // Local file header
-  const header = new Uint8Array([
-    0x50,0x4B,0x03,0x04, // signature
-    0x14,0x00,           // version needed
-    0x00,0x00,           // flags
-    0x00,0x00,           // compression (stored)
-    0x00,0x00,           // mod time
-    0x00,0x00,           // mod date
-    0x00,0x00,0x00,0x00, // crc32 (0 = skip check)
-    ...intToBytes(bytes.length, 4), // compressed size
-    ...intToBytes(bytes.length, 4), // uncompressed size
-    ...intToBytes(nameBytes.length, 2), // filename length
-    0x00,0x00,           // extra field length
-    ...nameBytes,
-    ...bytes,
-  ]);
+function pollScan(scanId) {
+  const startedAt = Date.now();
+  updateOverlay('Scanning…', 8);
 
-  // Central directory
-  const central = new Uint8Array([
-    0x50,0x4B,0x01,0x02,
-    0x14,0x00,0x14,0x00,
-    0x00,0x00,0x00,0x00,
-    0x00,0x00,0x00,0x00,
-    0x00,0x00,0x00,0x00,
-    0x00,0x00,0x00,0x00,
-    ...intToBytes(bytes.length, 4),
-    ...intToBytes(bytes.length, 4),
-    ...intToBytes(nameBytes.length, 2),
-    0x00,0x00,0x00,0x00,0x00,0x00,
-    0x00,0x00,0x00,0x00,
-    0x00,0x00,0x00,0x00,
-    ...nameBytes,
-  ]);
-
-  const centralOffset = header.length;
-  const centralSize   = central.length;
-
-  // End of central directory
-  const eocd = new Uint8Array([
-    0x50,0x4B,0x05,0x06,
-    0x00,0x00,0x00,0x00,
-    0x01,0x00,0x01,0x00,
-    ...intToBytes(centralSize, 4),
-    ...intToBytes(centralOffset, 4),
-    0x00,0x00,
-  ]);
-
-  const blob = new Blob([header, central, eocd], { type: 'application/zip' });
-  return blob;
+  pollTimer = setInterval(async () => {
+    if (Date.now() - startedAt > POLL_TIMEOUT_MS) {
+      stopPoll();
+      scanning = false;
+      hideOverlay();
+      showError('Scan timed out. Try a smaller repository, or upload a ZIP of it.');
+      return;
+    }
+    try {
+      const res = await fetch('/api/status/' + scanId);
+      if (res.status === 404) {
+        stopPoll(); scanning = false; hideOverlay();
+        showError('Scan not found. Please try again.');
+        return;
+      }
+      const s = await res.json();
+      if (s.status === 'completed') {
+        stopPoll();
+        updateOverlay('Scan complete — building report…', 100);
+        setTimeout(() => { window.location.href = '/report/' + scanId; }, 500);
+      } else if (s.status === 'failed') {
+        stopPoll(); scanning = false; hideOverlay();
+        showError(s.error || 'Scan failed.');
+      } else {
+        updateOverlay(stageTitle(s.stage), clampPct(s.progress));
+        setOverlayMsg(s.message);
+      }
+    } catch (_) { /* transient network hiccup — keep polling */ }
+  }, POLL_INTERVAL_MS);
 }
 
-function intToBytes(n, len) {
-  const arr = [];
-  for (let i = 0; i < len; i++) { arr.push(n & 0xff); n >>= 8; }
-  return arr;
+function stopPoll() {
+  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
 }
 
-// Polling
-async function poll(id) {
+function stageTitle(stage) {
+  if (stage === 'clone') return 'Cloning repository…';
+  if (stage === 'files') return 'Scanning files…';
+  if (stage === 'git_history') return 'Scanning git history…';
+  return 'Scanning…';
+}
+function clampPct(p) {
+  return Math.max(1, Math.min(99, Number(p) || 0));
+}
+
+/* ── Recent scans (localStorage) ──────────────────────── */
+
+function loadRecent() {
   try {
-    const r = await fetch('/api/status/' + id);
-    if (!r.ok) { setTimeout(() => poll(id), 1500); return; }
-    const d = await r.json();
-    updateOverlay(d.stage || '...', d.progress || 0);
-    if (d.status === 'done') { window.location.href = '/report/' + id; return; }
-    if (d.status === 'error') { hideOverlay(); showError('Scan failed: ' + (d.error || 'Unknown error')); return; }
-    setTimeout(() => poll(id), 1000);
-  } catch { setTimeout(() => poll(id), 2000); }
+    const raw = JSON.parse(localStorage.getItem(RECENT_KEY));
+    return Array.isArray(raw) ? raw : [];
+  } catch (_) {
+    return [];
+  }
 }
 
-// Overlay
-function showOverlay(stage) {
-  document.getElementById('scan-overlay').classList.remove('hidden');
-  document.getElementById('overlay-stage').textContent = stage;
-  document.getElementById('progress-fill').style.width = '0%';
-  document.getElementById('overlay-pct').textContent = '0%';
+function rememberScan(id, label) {
+  if (!id) return;
+  let recent = loadRecent().filter((x) => x.id !== id);
+  recent.unshift({ id: id, label: String(label || id), at: Date.now() });
+  recent = recent.slice(0, RECENT_LIMIT);
+  try {
+    localStorage.setItem(RECENT_KEY, JSON.stringify(recent));
+  } catch (_) { /* storage full or blocked — non-fatal */ }
+  renderRecent();
 }
-function updateOverlay(stage, pct) {
-  document.getElementById('overlay-stage').textContent = stage;
-  document.getElementById('progress-fill').style.width = pct + '%';
-  document.getElementById('overlay-pct').textContent = pct + '%';
-}
-function hideOverlay() { document.getElementById('scan-overlay').classList.add('hidden'); }
 
-// Error
-function showError(msg) {
-  const el = document.getElementById('scan-error');
-  el.textContent = msg;
-  el.classList.remove('hidden');
-}
-function clearError() { document.getElementById('scan-error').classList.add('hidden'); }
+function renderRecent() {
+  const wrap = $('recent-scans');
+  const list = $('recent-list');
+  if (!wrap || !list) return;
 
-// Enter key on URL input
-document.getElementById('repo-url').addEventListener('keydown', e => {
+  const recent = loadRecent();
+  if (!recent.length) {
+    wrap.classList.add('hidden');
+    list.innerHTML = '';
+    return;
+  }
+
+  wrap.classList.remove('hidden');
+  list.innerHTML = recent.map((x) =>
+    `<button class="recent-chip" onclick="openRecent('${x.id}')" title="${escapeHtml(x.label)}">` +
+      `<span class="rc-label">${escapeHtml(x.label)}</span>` +
+      `<span class="rc-date">${escapeHtml(fmtRecent(x.at))}</span>` +
+    `</button>`
+  ).join('');
+}
+
+function openRecent(id) {
+  if (id && /^[a-f0-9]{12}$/.test(id)) {
+    window.location.href = '/report/' + id;
+  }
+}
+
+function clearRecentScans() {
+  try { localStorage.removeItem(RECENT_KEY); } catch (_) { /* ignore */ }
+  renderRecent();
+}
+
+function fmtRecent(t) {
+  const d = new Date(t);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+/* ── Overlay ──────────────────────────────────────────── */
+
+function showOverlay(title, pct) {
+  $('scan-overlay').classList.remove('hidden');
+  setOverlayMsg('');
+  updateOverlay(title, pct);
+}
+function hideOverlay() {
+  $('scan-overlay').classList.add('hidden');
+}
+function updateOverlay(title, pct) {
+  $('overlay-stage').textContent = title;
+  $('progress-fill').style.width = (pct || 0) + '%';
+  $('overlay-pct').textContent = Math.round(pct || 0) + '%';
+}
+function setOverlayMsg(msg) {
+  const el = $('overlay-msg');
+  el.textContent = msg || '';
+  el.classList.toggle('hidden', !msg);
+}
+
+/* ── Helpers ──────────────────────────────────────────── */
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
+}
+
+ $('repo-url').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') startUrlScan();
 });
