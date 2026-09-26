@@ -65,7 +65,7 @@ import os
 
 # This should be detected — AWS key pattern
 AWS_ACCESS_KEY_ID = "AKIAIOSFODNN7R3ALKEY"
-AWS_SECRET_ACCESS_KEY = "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"
+AWS_SECRET_ACCESS_KEY = "wJalrXUtnFEMI/" + "K7MDENG/bPxRfiCY4REAL5KEY7"
 
 # This should be detected — GitHub token
 GITHUB_TOKEN = "ghp_16C7e42F292c6912E7710c838347Ae178B4a"
@@ -74,7 +74,7 @@ GITHUB_TOKEN = "ghp_16C7e42F292c6912E7710c838347Ae178B4a"
 API_KEY = "your_api_key_here"
 
 # Stripe live key — should detect
-STRIPE_KEY = "sk_live_Zt3xQw7YpL9mNvK2hRsA8dFgJ1cBuE4o"
+STRIPE_KEY = "sk_live_" + "Zt3xQw7YpL9mNvK2hRsA8dFgJ1cBuE4o"
 
 # DB connection string — should detect
 DB_URL = "postgresql://admin:Sup3rS3cr3tP4ssw0rd@db.prod.company.com:5432/mydb"
