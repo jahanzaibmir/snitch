@@ -26,10 +26,10 @@ It runs 30 plus detection patterns with entropy analysis across every file and e
 
 | Level    | Meaning                                         |
 |----------|-------------------------------------------------|
-| CRITICAL | Immediate risk — rotate/revoke now              |
-| HIGH     | Significant exposure — rotate soon              |
-| MEDIUM   | Possible secret — review and rotate if real     |
-| LOW      | Low-confidence match — manual review needed     |
+| CRITICAL | Immediate risk —> rotate/revoke now              |
+| HIGH     | Significant exposure —> rotate soon              |
+| MEDIUM   | Possible secret — >review and rotate if real     |
+| LOW      | Low-confidence match —> manual review needed     |
 
 ---
 
