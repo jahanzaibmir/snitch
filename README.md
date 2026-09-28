@@ -1,34 +1,10 @@
 # Snitch
 
-Secret & credential leak scanner for Git repositories and codebases.
+Snitch is a secret detection tool that scans GitHub repositories and codebases for accidentally committed API keys, passwords, tokens, and private keys.
+It runs 30 plus detection patterns with entropy analysis across every file and every git commit, then gives you a clean report showing exactly where each secret is, how serious it is. Built for developers who want to catch credential leaks before they become a real problem.
 
 ---
 
-## Quick Start (Windows)
-
-### Prerequisites
-- Python 3.10 or higher — [python.org](https://www.python.org/downloads/)
-  - During install, check **"Add Python to PATH"**
-- Git — [git-scm.com](https://git-scm.com/download/win)
-
-### Setup
-```
-Double-click:  scripts\setup.bat
-```
-
-### Run
-```
-Double-click:  scripts\start.bat
-```
-
-Opens automatically at **http://localhost:8000**
-
-### Test engine
-```
-Double-click:  scripts\test.bat
-```
-
----
 
 ## What it detects
 
@@ -45,40 +21,6 @@ Double-click:  scripts\test.bat
 
 ---
 
-## Project Structure
-
-```
-snitch/
-├── engine/
-│   ├── __init__.py       # Public API
-│   ├── patterns.py       # 30+ regex patterns
-│   ├── entropy.py        # Shannon entropy analysis
-│   ├── scanner.py        # File/directory scanner
-│   └── git_scanner.py    # Git history scanner
-├── api/
-│   ├── __init__.py
-│   └── main.py           # FastAPI backend
-├── static/
-│   ├── css/
-│   │   ├── main.css      # Design system
-│   │   └── report.css    # Report page styles
-│   └── js/
-│       ├── main.js       # Landing page logic
-│       └── report.js     # Report page logic
-├── templates/
-│   ├── index.html        # Landing page
-│   └── report.html       # Report page
-├── uploads/              # Temp upload storage (auto-created)
-├── reports/              # Scan results JSON (auto-created)
-├── scripts/
-│   ├── setup.bat         # Windows setup
-│   ├── start.bat         # Windows start
-│   └── test.bat          # Run engine tests
-├── test_engine.py        # Engine smoke tests
-└── requirements.txt
-```
-
----
 
 ## Severity Levels
 
@@ -100,14 +42,3 @@ snitch/
 5. **Severity scoring** — entropy + pattern type + context (commented, git history) determines final severity
 
 ---
-
-## API Endpoints
-
-| Method | Path                             | Description              |
-|--------|----------------------------------|--------------------------|
-| POST   | /api/scan/url                    | Start scan from URL      |
-| POST   | /api/scan/upload                 | Start scan from ZIP      |
-| GET    | /api/status/{scan_id}            | Poll scan progress       |
-| GET    | /api/report/{scan_id}            | Fetch report JSON        |
-| GET    | /api/report/{scan_id}/download/json | Download report       |
-| GET    | /api/health                      | Health check             |
