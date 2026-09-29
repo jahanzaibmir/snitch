@@ -1,7 +1,6 @@
 """
-Snitch — Git History Scanner
-Scans git commit history for secrets that may have been introduced and later removed.
-Uses gitpython to walk commits and scan diffs.
+Snitch _ Git History Scanner
+
 """
 
 import os
