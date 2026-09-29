@@ -23,14 +23,13 @@ from .entropy import classify_entropy, is_placeholder, boost_severity
 MAX_FILE_SIZE_MB = 5
 MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
 
-# Lines that are clearly comments in common languages — still scan them
+# Lines that are clearly comments in common languages  still scan them
 # but flag findings in comments with lower confidence
 COMMENT_PREFIXES = ('#', '//', '--', '*', '/*', '"""', "'''")
 
-
-# ──────────────────────────────────────────────────────────────────────────────
+ 
 # Finding model
-# ──────────────────────────────────────────────────────────────────────────────
+
 
 def make_finding(
     pattern_id: str,
@@ -89,9 +88,9 @@ def _redact(value: str) -> str:
     return value[:4] + "•" * (len(value) - 8) + value[-4:]
 
 
-# ──────────────────────────────────────────────────────────────────────────────
+ 
 # File filtering
-# ──────────────────────────────────────────────────────────────────────────────
+
 
 def should_skip_path(path: Path) -> bool:
     """Return True if this file/directory should be skipped entirely."""
@@ -127,9 +126,9 @@ def is_binary_file(file_path: Path) -> bool:
         return True
 
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Line-level scanner
-# ──────────────────────────────────────────────────────────────────────────────
+
+# Line level scanner
+
 
 def scan_line(line: str, line_number: int, file_path: str) -> list[dict]:
     """Scan a single line against all patterns. Returns list of findings."""
@@ -182,9 +181,9 @@ def scan_line(line: str, line_number: int, file_path: str) -> list[dict]:
     return findings
 
 
-# ──────────────────────────────────────────────────────────────────────────────
+
 # File scanner
-# ──────────────────────────────────────────────────────────────────────────────
+
 
 def scan_file(file_path: Path, base_dir: Path) -> list[dict]:
     """Scan a single file. Returns all findings."""
@@ -223,9 +222,9 @@ def scan_file(file_path: Path, base_dir: Path) -> list[dict]:
     return findings
 
 
-# ──────────────────────────────────────────────────────────────────────────────
+
 # Directory scanner
-# ──────────────────────────────────────────────────────────────────────────────
+
 
 def scan_directory(
     directory: str | Path,
@@ -280,9 +279,9 @@ def scan_directory(
     return build_report(all_findings, files_scanned, files_skipped, total_files, str(base_dir))
 
 
-# ──────────────────────────────────────────────────────────────────────────────
+
 # Report builder
-# ──────────────────────────────────────────────────────────────────────────────
+
 
 def build_report(
     findings: list[dict],
