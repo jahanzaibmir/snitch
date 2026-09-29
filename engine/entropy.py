@@ -1,7 +1,6 @@
 """
-Snitch — Entropy Analysis
-Uses Shannon entropy to determine if a matched string is likely a real secret
-vs a low-entropy placeholder like "mypassword" or "example123"
+Snitch thi is an Entropy Analysis
+
 """
 
 import math
