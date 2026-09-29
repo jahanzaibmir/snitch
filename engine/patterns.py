@@ -1,6 +1,6 @@
 """
-Snitch — Secret Detection Patterns
-Each pattern has: name, regex, severity, confidence_boost (if entropy is high), remediation
+Snitch
+
 """
 
 import re
@@ -11,7 +11,7 @@ SEVERITY_MEDIUM   = "MEDIUM"
 SEVERITY_LOW      = "LOW"
 
 PATTERNS = [
-    # ─── Cloud Providers ───────────────────────────────────────────────────────
+  
 
     {
         "id": "aws_access_key",
@@ -46,7 +46,7 @@ PATTERNS = [
         "remediation": "Regenerate the key in Azure Portal. Use Managed Identity or Azure Key Vault.",
     },
 
-    # ─── Source Control & CI/CD ────────────────────────────────────────────────
+    # Source Control 
 
     {
         "id": "github_pat",
@@ -81,7 +81,7 @@ PATTERNS = [
         "remediation": "Revoke in GitLab → User Settings → Access Tokens.",
     },
 
-    # ─── Payment Processors ────────────────────────────────────────────────────
+    # Payment Processors 
 
     {
         "id": "stripe_secret_key",
@@ -108,7 +108,7 @@ PATTERNS = [
         "remediation": "Revoke in PayPal Developer Dashboard. Rotate credentials.",
     },
 
-    # ─── Communication APIs ────────────────────────────────────────────────────
+    #  Communication APIs
 
     {
         "id": "twilio_account_sid",
@@ -143,7 +143,7 @@ PATTERNS = [
         "remediation": "Regenerate in Mailgun → Account → Security.",
     },
 
-    # ─── Auth & Identity ───────────────────────────────────────────────────────
+    # Auth & Identity
 
     {
         "id": "jwt_token",
@@ -162,7 +162,7 @@ PATTERNS = [
         "remediation": "Rotate in your OAuth provider. Store in environment variables or a secrets manager.",
     },
 
-    # ─── Database Credentials ──────────────────────────────────────────────────
+    # Database Credentials
 
     {
         "id": "db_connection_string",
@@ -181,8 +181,7 @@ PATTERNS = [
         "remediation": "Remove hardcoded password. Use environment variables: os.environ.get('DB_PASSWORD')",
     },
 
-    # ─── Private Keys ──────────────────────────────────────────────────────────
-
+    #  Private Keys 
     {
         "id": "rsa_private_key",
         "name": "RSA Private Key",
@@ -216,7 +215,7 @@ PATTERNS = [
         "remediation": "Revoke this PGP key and generate a new one. Notify any parties that trusted it.",
     },
 
-    # ─── Generic High-Entropy Patterns ────────────────────────────────────────
+    #  Generic High-Entropy Patterns 
 
     {
         "id": "generic_api_key",
@@ -235,7 +234,7 @@ PATTERNS = [
         "remediation": "Rotate this token with the issuing service. Store in environment variables.",
     },
 
-    # ─── Social / Developer APIs ───────────────────────────────────────────────
+    #  Social / Developer APIs 
 
     {
         "id": "slack_webhook",
@@ -270,7 +269,7 @@ PATTERNS = [
         "remediation": "Revoke via BotFather (/revoke). Generate a new token.",
     },
 
-    # ─── AI / ML Services ─────────────────────────────────────────────────────
+    #  AI / ML Services 
 
     {
         "id": "openai_api_key",
@@ -298,7 +297,7 @@ PATTERNS = [
     },
 ]
 
-# ─── False Positive Filters ────────────────────────────────────────────────────
+#  False Positive Filters 
 # Patterns that indicate a value is likely a placeholder, not a real secret
 
 PLACEHOLDER_PATTERNS = [
