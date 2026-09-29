@@ -13,10 +13,10 @@ CHARSET_BASE64 = set(string.ascii_letters + string.digits + '+/=')
 CHARSET_HEX    = set(string.hexdigits)
 CHARSET_ALNUM  = set(string.ascii_letters + string.digits)
 
-# Thresholds — tuned empirically
+# Thresholds  tuned empirically
 # Real secrets tend to be high entropy, placeholders tend to be low
 ENTROPY_THRESHOLD_HIGH   = 4.0   # Very likely a real secret
-ENTROPY_THRESHOLD_MEDIUM = 3.2   # Possibly a real secret — flag with lower confidence
+ENTROPY_THRESHOLD_MEDIUM = 3.2   # Possibly a real secret  flag with lower confidence
 ENTROPY_THRESHOLD_LOW    = 2.5   # Likely a placeholder or dictionary word
 
 
@@ -91,11 +91,11 @@ def is_placeholder(value: str) -> bool:
         if kw in lower:
             return True
 
-    # All same character (e.g. "aaaaaaaaa")
+    # All same character ( "aaaaaaaaa")
     if len(set(value)) <= 2:
         return True
 
-    # Sequential characters (e.g. "abcdefgh", "12345678") — only very short pure-sequential strings
+    # Sequential characters   only very short pure-sequential strings
     if len(value) < 16 and _is_sequential(value):
         return True
 
