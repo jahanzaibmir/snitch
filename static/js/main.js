@@ -1,8 +1,4 @@
-/* ═══════════════════════════════════════════════════════════
-   Snitch — landing page
-   Scan start, upload handling, live progress — plus recent
-   scan history stored in localStorage.
-   ═══════════════════════════════════════════════════════════ */
+
 
 const $ = (id) => document.getElementById(id);
 const MAX_UPLOAD_MB = 50;
@@ -17,7 +13,7 @@ let scanning = false;
 
 document.addEventListener('DOMContentLoaded', renderRecent);
 
-/* ── Tabs ─────────────────────────────────────────────── */
+/*  Tabs  */
 
 function switchTab(tab) {
   const isUrl = tab === 'url';
@@ -28,7 +24,6 @@ function switchTab(tab) {
   hideError();
 }
 
-/* ── Inline errors ────────────────────────────────────── */
 
 function showError(msg) {
   const box = $('scan-error');
@@ -39,7 +34,7 @@ function hideError() {
   $('scan-error').classList.add('hidden');
 }
 
-/* ── Repo URL scan ────────────────────────────────────── */
+/*  Repo URL scan  */
 
 async function startUrlScan() {
   if (scanning) return;
@@ -70,7 +65,7 @@ async function startUrlScan() {
   }
 }
 
-/* ── File upload ──────────────────────────────────────── */
+/*  File upload  */
 
 function handleFileSelect(e) {
   setSelectedFile(e.target.files && e.target.files[0]);
@@ -161,7 +156,7 @@ function startUploadScan() {
   xhr.send(fd);
 }
 
-/* ── Polling ──────────────────────────────────────────── */
+/*  Polling  */
 
 function pollScan(scanId) {
   const startedAt = Date.now();
@@ -212,7 +207,7 @@ function clampPct(p) {
   return Math.max(1, Math.min(99, Number(p) || 0));
 }
 
-/* ── Recent scans (localStorage) ──────────────────────── */
+/*  Recent scans (localStorage)  */
 
 function loadRecent() {
   try {
@@ -272,7 +267,7 @@ function fmtRecent(t) {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-/* ── Overlay ──────────────────────────────────────────── */
+/*  Overlay  */
 
 function showOverlay(title, pct) {
   $('scan-overlay').classList.remove('hidden');
@@ -293,7 +288,7 @@ function setOverlayMsg(msg) {
   el.classList.toggle('hidden', !msg);
 }
 
-/* ── Helpers ──────────────────────────────────────────── */
+/*  Helpers  */
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({
