@@ -159,7 +159,8 @@ def _run_url_scan(scan_id: str, url: str, display_name: str) -> None:
 
         cb = make_progress_callback(scan_id, has_git=True)
         file_report = scan_directory(temp_dir, progress_callback=cb)
-        git_findings = scan_git_history(temp_dir, progress_callback=cb)
+        file_fps = {f["fingerprint"] for f in file_report["findings"]}
+        git_findings = scan_git_history(temp_dir, progress_callback=cb, already_found_fingerprints=file_fps)
 
         report = build_report(
             findings=file_report["findings"] + git_findings,
@@ -191,7 +192,7 @@ def _scan_single_file(path: Path, display_name: str, cb) -> dict:
                     continue
                 findings.extend(scan_line(line, line_no, display_name))
     cb(stage="files", current=display_name, done=1, total=1)
-    return build_report(findings, 1, 0, 1, display_name)
+    return build_report(findings=findings, files_scanned=1, files_skipped=0, files_total=1, source=display_name)
 
 
 def _run_upload_scan(scan_id: str, work_root: Path, scan_dir: Path,
@@ -211,7 +212,8 @@ def _run_upload_scan(scan_id: str, work_root: Path, scan_dir: Path,
             file_report = scan_directory(scan_dir, progress_callback=cb)
             git_findings = []
             if has_git:
-                git_findings = scan_git_history(scan_dir, progress_callback=cb)
+                git_fps = {f["fingerprint"] for f in file_report["findings"]}
+                git_findings = scan_git_history(scan_dir, progress_callback=cb, already_found_fingerprints=git_fps)
 
             report = build_report(
                 findings=file_report["findings"] + git_findings,
