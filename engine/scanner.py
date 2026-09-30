@@ -1,15 +1,5 @@
 """
-Snitch — File Scanner v2.0
-
-Improvements over v1:
-- .txt, .md, .env files are NOW scanned (they often contain real secrets)
-- Context window: stores surrounding lines so findings show meaningful context
-- Per-finding confidence combining pattern + entropy
-- Cross-file deduplication uses value fingerprint, not redacted string
-- Detects .env variable assignments (KEY=VALUE without quotes)
-- Skips lines that are clearly URL parameters / docs references
-- Max file size raised to 10 MB for large config files
-- Scan stats include bytes_scanned
+Snitch engine/scanner.py
 """
 
 import os
