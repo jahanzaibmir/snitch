@@ -1,5 +1,5 @@
 """
-Snitch Engine v2.0 — public API
+Snitch Engine
 """
 
 from .patterns   import PATTERNS, SEVERITY_CRITICAL, SEVERITY_HIGH, SEVERITY_MEDIUM, SEVERITY_LOW
