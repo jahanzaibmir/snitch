@@ -1,5 +1,5 @@
 """
-Snitch /engine/git_scanner.py
+Snitch /engine/entropy.py
 
 """
 
@@ -7,7 +7,7 @@ import math
 import string
 import re
 
-# ── Thresholds ─────────────────────────────────────────────────────────────────
+#  Thresholds 
 
 ENTROPY_HIGH   = 3.8   # Very likely real
 ENTROPY_MEDIUM = 3.0   # Possibly real, medium confidence
