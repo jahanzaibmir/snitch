@@ -1,4 +1,4 @@
-/* Snitch Report Dashboard — Light Theme */
+/* Snitch Report Dashboard light Theme */
 .report-body{background:#f5f5f5}
 .report-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 58px);gap:16px;color:var(--text-muted);font-size:.9rem}
 .report-id-badge{font-family:var(--mono);font-size:.74rem;color:var(--text-muted);background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:4px 10px}
