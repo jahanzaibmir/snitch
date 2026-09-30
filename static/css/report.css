@@ -1,9 +1,6 @@
-/* ══════════════════════════════════════════════════════════════
-   Snitch — Report dashboard
-   Pure white · black · gray. Plain fonts, no color, no motion.
-   ══════════════════════════════════════════════════════════════ */
 
-/* ── Loading & error states ──────────────────────────── */
+
+/*  these are classified as Loading  error states  */
 
 .report-loading {
   min-height: calc(100vh - 68px); display: flex; flex-direction: column;
@@ -29,7 +26,7 @@
 .report-error p { color: var(--muted); max-width: 460px; font-size: 15px; }
 .report-error .btn-primary { margin-top: 20px; }
 
-/* ── Nav extras ──────────────────────────────────────── */
+/*  Nav extras  */
 
 .nav-actions { gap: 10px; flex-wrap: wrap; }
 .report-id-badge {
@@ -43,7 +40,7 @@
 }
 .btn-outline:hover { background: var(--ink); color: #FFFFFF; }
 
-/* ── Header band ─────────────────────────────────────── */
+/* Header band  */
 
 .report-header { background: #FFFFFF; border-bottom: 1px solid var(--hairline); }
 .report-header-inner {
@@ -91,7 +88,7 @@
 .score-cell.risk .score-num { color: #FFFFFF; }
 .score-cell.risk .score-lbl { color: #BBBBBB; }
 
-/* ── Dashboard grid ──────────────────────────────────── */
+/*  Dashboard grid  */
 
 .report-main { max-width: var(--maxw); margin: 0 auto; padding: 36px 28px 90px; }
 .dash-grid { display: grid; grid-template-columns: 300px 1fr; gap: 24px; align-items: start; }
@@ -137,7 +134,7 @@
 }
 .empty-note { font-size: 13px; color: var(--faint); }
 
-/* ── Filter bar ──────────────────────────────────────── */
+/*  Filter bar  */
 
 .filter-bar { position: sticky; top: 84px; z-index: 10; margin-bottom: 20px; }
 .filter-inner {
@@ -175,7 +172,7 @@
 }
 .filter-search:focus { border-color: var(--ink); }
 
-/* ── Empty states ────────────────────────────────────── */
+/*  Empty states  */
 
 .no-findings {
   background: #FFFFFF; border: 1px solid var(--ink);
@@ -191,7 +188,7 @@
 .no-findings h2 { font-size: 28px; font-weight: 700; margin-bottom: 10px; }
 .no-findings p { color: var(--muted); font-size: 15px; max-width: 440px; margin: 0 auto; }
 
-/* ── Findings ────────────────────────────────────────── */
+/*  Findings  */
 
 .findings-list { display: flex; flex-direction: column; gap: 14px; }
 .finding { background: #FFFFFF; border: 1px solid var(--hairline); }
@@ -263,7 +260,7 @@
 
 .f-actions { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--hairline-soft); }
 
-/* ── Responsive ──────────────────────────────────────── */
+/*  Responsive  */
 
 @media (max-width: 960px) {
   .dash-grid { grid-template-columns: 1fr; }
