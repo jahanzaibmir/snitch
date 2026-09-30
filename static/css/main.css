@@ -1,7 +1,4 @@
-/* ══════════════════════════════════════════════════════════════
-   Snitch — Design System
-   Pure white · black text · gray hierarchy. Plain fonts. No color.
-   ══════════════════════════════════════════════════════════════ */
+
 
 :root {
   --bg:        #FFFFFF;
@@ -134,7 +131,7 @@ input { font-family: inherit; }
   padding: 12px 14px; font-size: 14px;
 }
 
-/* ── Recent scans ────────────────────────────────────── */
+/* Recent scans  */
 
 .recent-scans { margin-top: 34px; }
 .recent-label {
@@ -159,7 +156,7 @@ input { font-family: inherit; }
 }
 .recent-clear:hover { color: var(--ink); }
 
-/* ── Sections ────────────────────────────────────────── */
+/*  Sections  */
 
 .section { padding: 90px 28px; }
 .section-alt { background: #FFFFFF; border-top: 1px solid var(--hairline-soft); }
@@ -175,7 +172,7 @@ input { font-family: inherit; }
 .step p { color: var(--muted); font-size: 15px; }
 .step-arrow { align-self: center; color: var(--ink); font-size: 22px; }
 
-/* ── Coverage grid ───────────────────────────────────── */
+/*  Coverage grid  */
 
 .coverage-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
 .coverage-item {
@@ -185,7 +182,7 @@ input { font-family: inherit; }
 }
 .cov-icon { font-size: 18px; }
 
-/* ── Footer ──────────────────────────────────────────── */
+/*  Footer  */
 
 .footer { border-top: 1px solid var(--hairline); background: #FFFFFF; padding: 50px 28px; }
 .footer-inner {
@@ -196,7 +193,7 @@ input { font-family: inherit; }
 .footer-credit p { font-size: 14px; color: var(--ink-soft); }
 .footer-author { font-size: 13px; color: var(--faint); margin-top: 5px !important; }
 
-/* ── Scan overlay ────────────────────────────────────── */
+/*  Scan overlay  */
 
 .overlay {
   position: fixed; inset: 0; z-index: 100;
@@ -225,7 +222,7 @@ input { font-family: inherit; }
 .progress-fill { height: 100%; width: 0%; background: var(--ink); transition: width .4s ease; }
 .overlay-pct { margin-top: 11px; font-family: var(--mono); font-size: 13px; color: var(--muted); }
 
-/* ── Responsive ──────────────────────────────────────── */
+/*  Responsive  */
 
 @media (max-width: 960px) {
   .coverage-grid { grid-template-columns: repeat(2, 1fr); }
