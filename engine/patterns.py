@@ -1,5 +1,7 @@
 """
+
 snitch engine/patterns.py"""
+
 
 import re
 
@@ -10,7 +12,13 @@ SEVERITY_LOW      = "LOW"
 
 
 
+
 PATTERNS = [
+
+
+
+PATTERNS = [
+
 
 
     {
@@ -50,7 +58,7 @@ PATTERNS = [
         "remediation": "Session tokens expire, but check if the underlying credentials are compromised.",
     },
 
- 
+
     {
         "id": "gcp_service_account",
         "name": "GCP Service Account Key",
@@ -97,7 +105,6 @@ PATTERNS = [
         "remediation": "Check Firebase security rules. If open, lock down immediately in Firebase Console.",
     },
 
-  
 
     {
         "id": "azure_storage_key",
@@ -192,7 +199,14 @@ PATTERNS = [
         "remediation": "Revoke in Bitbucket → Account Settings → App Passwords.",
     },
 
+<<<<<<< HEAD
  
+=======
+    # ═══════════════════════════════════════════════════════
+    # PAYMENT PROCESSORS
+    # ═══════════════════════════════════════════════════════
+
+>>>>>>> a427c87 (git push)
     {
         "id": "stripe_secret_key",
         "name": "Stripe Secret Key",
@@ -257,7 +271,13 @@ PATTERNS = [
         "remediation": "Revoke in Square Developer Dashboard → OAuth.",
     },
 
+<<<<<<< HEAD
   
+=======
+    # ═══════════════════════════════════════════════════════
+    # COMMUNICATION
+    # ═══════════════════════════════════════════════════════
+>>>>>>> a427c87 (git push)
 
     {
         "id": "twilio_account_sid",
@@ -359,7 +379,13 @@ PATTERNS = [
         "remediation": "Revoke via @BotFather → /revoke. Generate a new token.",
     },
 
+<<<<<<< HEAD
 
+=======
+    # ═══════════════════════════════════════════════════════
+    # DATABASES
+    # ═══════════════════════════════════════════════════════
+>>>>>>> a427c87 (git push)
 
     {
         "id": "db_connection_string",
@@ -425,7 +451,14 @@ PATTERNS = [
         "remediation": "Delete and regenerate in PlanetScale Dashboard → Passwords.",
     },
 
+<<<<<<< HEAD
  
+=======
+    # ═══════════════════════════════════════════════════════
+    # AUTH & IDENTITY
+    # ═══════════════════════════════════════════════════════
+
+>>>>>>> a427c87 (git push)
     {
         "id": "jwt_token",
         "name": "JSON Web Token",
@@ -481,7 +514,13 @@ PATTERNS = [
         "remediation": "Rotate the session secret. All existing sessions signed with it should be invalidated.",
     },
 
+<<<<<<< HEAD
  
+=======
+    # ═══════════════════════════════════════════════════════
+    # PRIVATE KEYS & CERTIFICATES
+    # ═══════════════════════════════════════════════════════
+>>>>>>> a427c87 (git push)
 
     {
         "id": "rsa_private_key",
@@ -529,7 +568,14 @@ PATTERNS = [
         "remediation": "Revoke this PGP key and generate a new one. Notify all parties that trusted it.",
     },
 
+<<<<<<< HEAD
    
+=======
+    # ═══════════════════════════════════════════════════════
+    # AI / ML SERVICES
+    # ═══════════════════════════════════════════════════════
+
+>>>>>>> a427c87 (git push)
     {
         "id": "openai_api_key",
         "name": "OpenAI API Key",
@@ -585,6 +631,12 @@ PATTERNS = [
         "remediation": "Revoke in Replicate → Account Settings → API tokens.",
     },
 
+<<<<<<< HEAD
+=======
+    # ═══════════════════════════════════════════════════════
+    # INFRASTRUCTURE & DEVOPS
+    # ═══════════════════════════════════════════════════════
+>>>>>>> a427c87 (git push)
 
     {
         "id": "heroku_api_key",
@@ -686,6 +738,12 @@ PATTERNS = [
         "remediation": "Revoke in CircleCI → User Settings → Personal API Tokens.",
     },
 
+<<<<<<< HEAD
+=======
+    # ═══════════════════════════════════════════════════════
+    # DATA / ANALYTICS
+    # ═══════════════════════════════════════════════════════
+>>>>>>> a427c87 (git push)
 
     {
         "id": "datadog_api_key",
@@ -724,6 +782,13 @@ PATTERNS = [
         "remediation": "Project tokens are semi-public; rotate the secret key if also exposed.",
     },
 
+<<<<<<< HEAD
+=======
+    # ═══════════════════════════════════════════════════════
+    # GENERIC HIGH-ENTROPY (always need entropy validation)
+    # ═══════════════════════════════════════════════════════
+
+>>>>>>> a427c87 (git push)
     {
         "id": "generic_api_key",
         "name": "Generic API Key",
@@ -753,7 +818,12 @@ PATTERNS = [
     },
 ]
 
+<<<<<<< HEAD
 # ─False positive filters 
+=======
+# ── False positive filters ─────────────────────────────────────────────────────
+# Match against the captured value — if any pattern matches, skip the finding
+>>>>>>> a427c87 (git push)
 
 PLACEHOLDER_PATTERNS = [
     re.compile(r'(?i)(your[_\-]?|my[_\-]?|the[_\-]?|an?[_\-]?|this[_\-]?|some[_\-]?)(api[_\-]?key|secret|token|password|key)'),
@@ -766,7 +836,11 @@ PLACEHOLDER_PATTERNS = [
 ]
 
 # Extensions to skip in directory scans
+<<<<<<< HEAD
 # NOTE: .txt, .md, .env etc. are NOT skipped  they commonly contain real secrets
+=======
+# NOTE: .txt, .md, .env etc. are NOT skipped — they commonly contain real secrets
+>>>>>>> a427c87 (git push)
 SKIP_EXTENSIONS = {
     '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.webp', '.bmp', '.tiff',
     '.pdf', '.zip', '.tar', '.gz', '.bz2', '.xz', '.rar', '.7z',
@@ -788,7 +862,11 @@ SKIP_PATHS = {
     'bower_components', 'jspm_packages',
 }
 
+<<<<<<< HEAD
 # Exact filenames that are almost always example
+=======
+# Exact filenames that are almost always example/test files
+>>>>>>> a427c87 (git push)
 SKIP_FILENAMES = {
     '.env.example', '.env.sample', '.env.test', '.env.template',
     'example.env', 'sample.env', 'template.env',

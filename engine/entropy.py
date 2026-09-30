@@ -1,4 +1,5 @@
 """
+
 Snitch /engine/entropy.py
 
 """
@@ -6,6 +7,7 @@ Snitch /engine/entropy.py
 import math
 import string
 import re
+
 
 #  Thresholds 
 
@@ -34,6 +36,36 @@ def _charset(value: str) -> str:
 
 
 #  Core entropy calculation 
+=======
+# ── Thresholds ─────────────────────────────────────────────────────────────────
+
+ENTROPY_HIGH   = 3.8   # Very likely real
+ENTROPY_MEDIUM = 3.0   # Possibly real — medium confidence
+ENTROPY_LOW    = 2.2   # Probably placeholder / dictionary word
+
+# Hex strings have a smaller alphabet so their max entropy is lower (~4.0 bits)
+# Adjust the threshold down for them
+ENTROPY_HEX_MEDIUM = 2.4
+
+# ── Character set detection ────────────────────────────────────────────────────
+
+_RE_HEX    = re.compile(r'^[0-9a-fA-F]+$')
+_RE_BASE64 = re.compile(r'^[A-Za-z0-9+/=]+$')
+_RE_ALNUM  = re.compile(r'^[A-Za-z0-9]+$')
+
+
+def _charset(value: str) -> str:
+    if _RE_HEX.match(value):
+        return "hex"
+    if _RE_BASE64.match(value):
+        return "base64"
+    if _RE_ALNUM.match(value):
+        return "alnum"
+    return "mixed"
+
+
+# ── Core entropy calculation ───────────────────────────────────────────────────
+>>>>>>> a427c87 (git push)
 
 def shannon_entropy(data: str) -> float:
     """Shannon entropy in bits. H = -Σ p(x) log₂ p(x)."""
@@ -62,7 +94,11 @@ def classify_entropy(value: str, pattern_confidence: str = "medium") -> dict:
     score   = shannon_entropy(value)
     charset = _charset(value)
 
+<<<<<<< HEAD
     # High-confidence patterns 
+=======
+    # High-confidence patterns (specific prefixes like ghp_, sk_live_, AKIA...)
+>>>>>>> a427c87 (git push)
     # still get entropy scored but we DON'T use it to filter them out.
     # That logic lives in scanner.py.
 
@@ -88,7 +124,11 @@ def classify_entropy(value: str, pattern_confidence: str = "medium") -> dict:
     }
 
 
+<<<<<<< HEAD
 #  Placeholder detection 
+=======
+# ── Placeholder detection ──────────────────────────────────────────────────────
+>>>>>>> a427c87 (git push)
 
 _PLACEHOLDER_KW = [
     # Generic placeholders
@@ -99,7 +139,11 @@ _PLACEHOLDER_KW = [
     # Common test strings
     'xxxxxxxx', 'aaaaaaaa', '11111111', '00000000',
     'qwerty', 
+<<<<<<< HEAD
    
+=======
+    # Template patterns already stripped by regex but belt-and-suspenders
+>>>>>>> a427c87 (git push)
     'todo', 'fixme', 'tbd', 'n/a',
 ]
 
@@ -150,7 +194,11 @@ def _is_sequential_run(s: str) -> bool:
     return consecutive / (len(s) - 1) > 0.80
 
 
+<<<<<<< HEAD
 #  Severity adjustment 
+=======
+# ── Severity adjustment ────────────────────────────────────────────────────────
+>>>>>>> a427c87 (git push)
 
 _SEV_ORDER = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
 

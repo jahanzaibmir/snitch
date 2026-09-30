@@ -1,5 +1,7 @@
 """
+
 Snitch engine/scanner.py
+
 """
 
 import os
@@ -32,6 +34,10 @@ _DOC_LINE_RE = re.compile(
 )
 
 
+<<<<<<< HEAD
+=======
+# ── Finding model ──────────────────────────────────────────────────────────────
+>>>>>>> a427c87 (git push)
 
 def _redact(value: str) -> str:
     if len(value) <= 8:
@@ -91,7 +97,11 @@ def make_finding(
     }
 
 
+<<<<<<< HEAD
 #  Path filtering 
+=======
+# ── Path filtering ─────────────────────────────────────────────────────────────
+>>>>>>> a427c87 (git push)
 
 def should_skip_path(path: Path) -> bool:
     parts = set(path.parts)
@@ -117,7 +127,11 @@ def is_binary_file(file_path: Path) -> bool:
         return True
 
 
+<<<<<<< HEAD
 #  Line level scanner 
+=======
+# ── Line-level scanner ─────────────────────────────────────────────────────────
+>>>>>>> a427c87 (git push)
 
 def scan_line(line: str, line_number: int, file_path: str,
               context_before: list[str] | None = None,
@@ -217,7 +231,11 @@ def pattern_id_is_generic(pid: str) -> bool:
     return pid.startswith("generic_")
 
 
+<<<<<<< HEAD
 #  File scanner 
+=======
+# ── File scanner ───────────────────────────────────────────────────────────────
+>>>>>>> a427c87 (git push)
 
 def scan_file(file_path: Path, base_dir: Path) -> list[dict]:
     if should_skip_path(file_path):
@@ -254,7 +272,11 @@ def scan_file(file_path: Path, base_dir: Path) -> list[dict]:
     return findings
 
 
+<<<<<<< HEAD
 #  Directory scanner 
+=======
+# ── Directory scanner ──────────────────────────────────────────────────────────
+>>>>>>> a427c87 (git push)
 
 def scan_directory(directory: str | Path, progress_callback=None) -> dict:
     base_dir = Path(directory).resolve()
@@ -305,7 +327,11 @@ def scan_directory(directory: str | Path, progress_callback=None) -> dict:
     )
 
 
+<<<<<<< HEAD
 #  Report builder 
+=======
+# ── Report builder ─────────────────────────────────────────────────────────────
+>>>>>>> a427c87 (git push)
 
 def build_report(
     findings: list[dict],
