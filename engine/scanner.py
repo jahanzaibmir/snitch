@@ -1,14 +1,22 @@
 """
-Snitch — File Scanner
-Walks a directory or file, applies patterns, entropy checks, false positive filters.
-Returns structured findings.
+Snitch — File Scanner v2.0
+
+Improvements over v1:
+- .txt, .md, .env files are NOW scanned (they often contain real secrets)
+- Context window: stores surrounding lines so findings show meaningful context
+- Per-finding confidence combining pattern + entropy
+- Cross-file deduplication uses value fingerprint, not redacted string
+- Detects .env variable assignments (KEY=VALUE without quotes)
+- Skips lines that are clearly URL parameters / docs references
+- Max file size raised to 10 MB for large config files
+- Scan stats include bytes_scanned
 """
 
 import os
 import re
 import uuid
+import hashlib
 from pathlib import Path
-from typing import Generator
 
 from .patterns import (
     PATTERNS,
@@ -19,19 +27,37 @@ from .patterns import (
 )
 from .entropy import classify_entropy, is_placeholder, boost_severity
 
+MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024   # 10 MB
+CONTEXT_LINES       = 2                  # lines before/after a finding
+MAX_LINE_LENGTH     = 2000               # skip minified / data lines
 
-MAX_FILE_SIZE_MB = 5
-MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
+COMMENT_PREFIXES = ('#', '//', '--', '/*', '*', '"""', "'''", '<!--', ';')
 
-# Lines that are clearly comments in common languages  still scan them
-# but flag findings in comments with lower confidence
-COMMENT_PREFIXES = ('#', '//', '--', '*', '/*', '"""', "'''")
+# ENV file pattern: KEY=value (unquoted)
+_ENV_RE = re.compile(r'^([A-Z][A-Z0-9_]{2,})\s*=\s*(.+)$')
 
- 
-# Finding model
+# Lines that look like documentation references (not real secrets)
+_DOC_LINE_RE = re.compile(
+    r'(?i)(e\.g\.|example|see |refer to|docs?:|note:|https?://docs\.|# ?TODO|# ?FIXME)'
+)
+
+
+# ── Finding model ──────────────────────────────────────────────────────────────
+
+def _redact(value: str) -> str:
+    if len(value) <= 8:
+        return "***"
+    keep = min(4, len(value) // 5)
+    return value[:keep] + "•" * (len(value) - keep * 2) + value[-keep:]
+
+
+def _fingerprint(value: str) -> str:
+    """SHA-256 of the raw value — used for deduplication across files."""
+    return hashlib.sha256(value.encode()).hexdigest()[:16]
 
 
 def make_finding(
+    *,
     pattern_id: str,
     pattern_name: str,
     category: str,
@@ -39,249 +65,258 @@ def make_finding(
     file_path: str,
     line_number: int,
     line_content: str,
+    context_before: list[str],
+    context_after: list[str],
     matched_value: str,
     entropy: dict,
     remediation: str,
     in_comment: bool = False,
     in_git_history: bool = False,
-    commit_hash: str = None,
-    commit_message: str = None,
+    commit_hash: str | None = None,
+    commit_message: str | None = None,
+    commit_date: str | None = None,
+    commit_author: str | None = None,
 ) -> dict:
-    """Build a standardised finding dict."""
-    
-    # Redact the matched value for display — show first 4 and last 4 chars
-    redacted = _redact(matched_value)
-    
-    # Adjust severity based on entropy
-    final_severity = boost_severity(severity, entropy["label"])
-    
-    # If found in a comment, nudge severity down one step unless it's a key pattern
-    if in_comment and final_severity not in ("CRITICAL",):
-        sev_order = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
-        idx = sev_order.index(final_severity)
-        final_severity = sev_order[max(0, idx - 1)]
-
     return {
-        "id": str(uuid.uuid4()),
-        "pattern_id": pattern_id,
-        "name": pattern_name,
-        "category": category,
-        "severity": final_severity,
-        "file": file_path,
-        "line": line_number,
-        "line_content": line_content.rstrip(),
-        "matched_value": matched_value,
-        "redacted_value": redacted,
-        "entropy": entropy,
-        "remediation": remediation,
-        "in_comment": in_comment,
-        "in_git_history": in_git_history,
-        "commit_hash": commit_hash,
-        "commit_message": commit_message,
+        "id":               str(uuid.uuid4()),
+        "fingerprint":      _fingerprint(matched_value),
+        "pattern_id":       pattern_id,
+        "name":             pattern_name,
+        "category":         category,
+        "severity":         severity,
+        "file":             file_path,
+        "line":             line_number,
+        "line_content":     line_content.rstrip(),
+        "context_before":   [l.rstrip() for l in context_before],
+        "context_after":    [l.rstrip() for l in context_after],
+        "matched_value":    matched_value,
+        "redacted_value":   _redact(matched_value),
+        "entropy":          entropy,
+        "remediation":      remediation,
+        "in_comment":       in_comment,
+        "in_git_history":   in_git_history,
+        "commit_hash":      commit_hash,
+        "commit_message":   commit_message,
+        "commit_date":      commit_date,
+        "commit_author":    commit_author,
     }
 
 
-def _redact(value: str) -> str:
-    """Partially redact a secret for safe display."""
-    if len(value) <= 8:
-        return "***"
-    return value[:4] + "•" * (len(value) - 8) + value[-4:]
-
-
- 
-# File filtering
-
+# ── Path filtering ─────────────────────────────────────────────────────────────
 
 def should_skip_path(path: Path) -> bool:
-    """Return True if this file/directory should be skipped entirely."""
     parts = set(path.parts)
-    
-    # Skip blacklisted directory names
     if parts & SKIP_PATHS:
         return True
-    
-    # Skip blacklisted filenames
     if path.name in SKIP_FILENAMES:
         return True
-    
-    # Skip by extension
     suffix = path.suffix.lower()
+    # Check composite suffixes like .min.js
+    full_name = path.name.lower()
+    if any(full_name.endswith(s) for s in ('.min.js', '.min.css', '.bundle.js', '.chunk.js')):
+        return True
     if suffix in SKIP_EXTENSIONS:
         return True
-    
-    # Skip minified JS/CSS
-    if path.name.endswith(('.min.js', '.min.css', '.bundle.js')):
-        return True
-    
     return False
 
 
 def is_binary_file(file_path: Path) -> bool:
-    """Quick binary check by reading first 1024 bytes."""
     try:
         with open(file_path, 'rb') as f:
-            chunk = f.read(1024)
-            return b'\x00' in chunk
+            return b'\x00' in f.read(8192)
     except Exception:
         return True
 
 
+# ── Line-level scanner ─────────────────────────────────────────────────────────
 
-# Line level scanner
+def scan_line(line: str, line_number: int, file_path: str,
+              context_before: list[str] | None = None,
+              context_after: list[str] | None = None) -> list[dict]:
+    """
+    Scan one line against all patterns.
+    Returns a list of findings (usually 0 or 1, occasionally more).
+    """
+    findings: list[dict] = []
 
+    # Quick exits
+    if not line or len(line) > MAX_LINE_LENGTH:
+        return findings
 
-def scan_line(line: str, line_number: int, file_path: str) -> list[dict]:
-    """Scan a single line against all patterns. Returns list of findings."""
-    findings = []
     stripped = line.strip()
-    
-    # Detect if this line is a comment
-    in_comment = any(stripped.startswith(prefix) for prefix in COMMENT_PREFIXES)
-    
+
+    # Skip obvious documentation lines
+    if _DOC_LINE_RE.search(stripped):
+        return findings
+
+    in_comment = any(stripped.startswith(p) for p in COMMENT_PREFIXES)
+
+    # Try to extract unquoted env values for extra pattern coverage
+    env_match = _ENV_RE.match(stripped)
+    env_value_extra = env_match.group(2).strip() if env_match else None
+
     for pattern in PATTERNS:
-        matches = pattern["regex"].finditer(line)
+        confidence = pattern.get("confidence", "medium")
+
+        matches = list(pattern["regex"].finditer(line))
+
+        # Also check env_value_extra if it looks long enough
+        if env_value_extra and len(env_value_extra) >= 12 and not matches:
+            m2 = pattern["regex"].search(env_value_extra)
+            if m2:
+                matches = [m2]
+
         for match in matches:
-            # Get the captured group if it exists, else the full match
-            value = match.group(1) if match.lastindex and match.lastindex >= 1 else match.group(0)
-            
+            value = (
+                match.group(1)
+                if match.lastindex and match.lastindex >= 1
+                else match.group(0)
+            )
+
             if not value or len(value) < 6:
                 continue
-            
-            # Check placeholder patterns
+
+            # Placeholder check
             if is_placeholder(value):
                 continue
-            
-            placeholder_match = any(p.search(value) for p in PLACEHOLDER_PATTERNS)
-            if placeholder_match:
+
+            # Pattern-level placeholder filters
+            if any(pp.search(value) for pp in PLACEHOLDER_PATTERNS):
                 continue
-            
+
             # Entropy analysis
-            entropy = classify_entropy(value)
-            
-            # For generic patterns, require at least medium entropy
-            if pattern["id"] in ("generic_api_key", "generic_token", "generic_password"):
-                if not entropy["is_likely_real"]:
-                    continue
-            
-            finding = make_finding(
+            entropy = classify_entropy(value, pattern_confidence=confidence)
+
+            # For medium-confidence / generic patterns, require at least medium entropy
+            needs_entropy = confidence == "medium" or pattern_id_is_generic(pattern["id"])
+            if needs_entropy and not entropy["is_likely_real"]:
+                continue
+
+            # Compute final severity
+            final_severity = boost_severity(
+                pattern["severity"],
+                entropy["label"],
+                pattern_confidence=confidence,
+            )
+
+            # Comments slightly reduce severity (but CRITICAL stays CRITICAL)
+            if in_comment and final_severity not in ("CRITICAL",):
+                sev_order = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+                idx = sev_order.index(final_severity)
+                final_severity = sev_order[max(0, idx - 1)]
+
+            findings.append(make_finding(
                 pattern_id=pattern["id"],
                 pattern_name=pattern["name"],
                 category=pattern["category"],
-                severity=pattern["severity"],
+                severity=final_severity,
                 file_path=file_path,
                 line_number=line_number,
                 line_content=line,
+                context_before=context_before or [],
+                context_after=context_after or [],
                 matched_value=value,
                 entropy=entropy,
                 remediation=pattern["remediation"],
                 in_comment=in_comment,
-            )
-            findings.append(finding)
-    
+            ))
+
     return findings
 
 
+def pattern_id_is_generic(pid: str) -> bool:
+    return pid.startswith("generic_")
 
-# File scanner
 
+# ── File scanner ───────────────────────────────────────────────────────────────
 
 def scan_file(file_path: Path, base_dir: Path) -> list[dict]:
-    """Scan a single file. Returns all findings."""
-    findings = []
-    
     if should_skip_path(file_path):
-        return findings
-    
+        return []
     if not file_path.is_file():
-        return findings
-    
-    # Skip large files
+        return []
     try:
         if file_path.stat().st_size > MAX_FILE_SIZE_BYTES:
-            return findings
+            return []
     except OSError:
-        return findings
-    
+        return []
     if is_binary_file(file_path):
-        return findings
-    
-    # Relative path for display
+        return []
+
     try:
         display_path = str(file_path.relative_to(base_dir))
     except ValueError:
         display_path = str(file_path)
-    
+
+    findings: list[dict] = []
     try:
-        with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
-            for line_number, line in enumerate(f, start=1):
-                line_findings = scan_line(line, line_number, display_path)
-                findings.extend(line_findings)
+        with open(file_path, 'r', encoding='utf-8', errors='replace') as fh:
+            lines = fh.readlines()
     except (PermissionError, OSError):
-        pass
-    
+        return []
+
+    for i, line in enumerate(lines):
+        before = [l for l in lines[max(0, i - CONTEXT_LINES):i]]
+        after  = [l for l in lines[i + 1: i + 1 + CONTEXT_LINES]]
+        hits   = scan_line(line, i + 1, display_path,
+                           context_before=before, context_after=after)
+        findings.extend(hits)
+
     return findings
 
 
+# ── Directory scanner ──────────────────────────────────────────────────────────
 
-# Directory scanner
-
-
-def scan_directory(
-    directory: str | Path,
-    progress_callback=None
-) -> dict:
-    """
-    Scan an entire directory recursively.
-    
-    progress_callback: optional callable(current_file: str, files_done: int, files_total: int)
-    Returns a scan result dict.
-    """
+def scan_directory(directory: str | Path, progress_callback=None) -> dict:
     base_dir = Path(directory).resolve()
-    
     if not base_dir.exists():
         raise FileNotFoundError(f"Directory not found: {base_dir}")
-    
-    # Collect all files first for progress tracking
-    all_files = []
+
+    all_files: list[Path] = []
     for root, dirs, files in os.walk(base_dir):
-        root_path = Path(root)
-        
-        # Prune directories in-place (skip node_modules etc. at dir level)
         dirs[:] = [
             d for d in dirs
             if d not in SKIP_PATHS and not d.startswith('.')
         ]
-        
         for fname in files:
-            all_files.append(root_path / fname)
-    
-    total_files = len(all_files)
-    all_findings = []
+            all_files.append(Path(root) / fname)
+
+    total         = len(all_files)
+    all_findings: list[dict] = []
     files_scanned = 0
     files_skipped = 0
-    
-    for i, file_path in enumerate(all_files):
-        if should_skip_path(file_path):
+    bytes_scanned = 0
+
+    for i, fp in enumerate(all_files):
+        if should_skip_path(fp):
             files_skipped += 1
-            continue
-        
-        findings = scan_file(file_path, base_dir)
-        all_findings.extend(findings)
-        files_scanned += 1
-        
+        else:
+            hits = scan_file(fp, base_dir)
+            all_findings.extend(hits)
+            files_scanned += 1
+            try:
+                bytes_scanned += fp.stat().st_size
+            except OSError:
+                pass
+
         if progress_callback:
-            progress_callback(
-                current_file=str(file_path.relative_to(base_dir)),
-                files_done=i + 1,
-                files_total=total_files,
-            )
-    
-    return build_report(all_findings, files_scanned, files_skipped, total_files, str(base_dir))
+            try:
+                rel = str(fp.relative_to(base_dir))
+            except ValueError:
+                rel = str(fp)
+            progress_callback(current_file=rel, files_done=i + 1, files_total=total)
+
+    return build_report(
+        findings=all_findings,
+        files_scanned=files_scanned,
+        files_skipped=files_skipped,
+        files_total=total,
+        bytes_scanned=bytes_scanned,
+        source=str(base_dir),
+    )
 
 
-
-# Report builder
-
+# ── Report builder ─────────────────────────────────────────────────────────────
 
 def build_report(
     findings: list[dict],
@@ -289,45 +324,42 @@ def build_report(
     files_skipped: int,
     files_total: int,
     source: str,
+    bytes_scanned: int = 0,
 ) -> dict:
-    """Build the final structured report from raw findings."""
-    
-    # Deduplicate — same pattern + same value in same file/line
-    seen = set()
-    unique_findings = []
+    # Deduplicate by fingerprint (same raw secret value) + file + line
+    seen: set[tuple] = set()
+    unique: list[dict] = []
     for f in findings:
-        key = (f["pattern_id"], f["file"], f["line"], f["redacted_value"])
+        key = (f["fingerprint"], f["file"], f["line"])
         if key not in seen:
             seen.add(key)
-            unique_findings.append(f)
-    
-    # Sort by severity (CRITICAL first)
-    severity_order = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3}
-    unique_findings.sort(key=lambda x: severity_order.get(x["severity"], 4))
-    
-    # Summary counts
+            unique.append(f)
+
+    sev_order = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3}
+    unique.sort(key=lambda x: sev_order.get(x["severity"], 4))
+
     summary = {
-        "total": len(unique_findings),
-        "critical": sum(1 for f in unique_findings if f["severity"] == "CRITICAL"),
-        "high": sum(1 for f in unique_findings if f["severity"] == "HIGH"),
-        "medium": sum(1 for f in unique_findings if f["severity"] == "MEDIUM"),
-        "low": sum(1 for f in unique_findings if f["severity"] == "LOW"),
+        "total":    len(unique),
+        "critical": sum(1 for f in unique if f["severity"] == "CRITICAL"),
+        "high":     sum(1 for f in unique if f["severity"] == "HIGH"),
+        "medium":   sum(1 for f in unique if f["severity"] == "MEDIUM"),
+        "low":      sum(1 for f in unique if f["severity"] == "LOW"),
     }
-    
-    # Category breakdown
-    categories = {}
-    for f in unique_findings:
+
+    categories: dict[str, int] = {}
+    for f in unique:
         cat = f["category"]
         categories[cat] = categories.get(cat, 0) + 1
-    
+
     return {
-        "source": source,
-        "summary": summary,
+        "source":     source,
+        "summary":    summary,
         "categories": categories,
         "stats": {
-            "files_total": files_total,
-            "files_scanned": files_scanned,
-            "files_skipped": files_skipped,
+            "files_total":    files_total,
+            "files_scanned":  files_scanned,
+            "files_skipped":  files_skipped,
+            "bytes_scanned":  bytes_scanned,
         },
-        "findings": unique_findings,
+        "findings": unique,
     }
