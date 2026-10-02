@@ -42,3 +42,6 @@ It runs 30 plus detection patterns with entropy analysis across every file and e
 5. **Severity scoring** — entropy + pattern type + context (commented, git history) determines final severity
 
 ---
+
+## How to contribute
+Contributions are welcome! Fork the repository, create a branch, make your changes, and open a Pull Request.
