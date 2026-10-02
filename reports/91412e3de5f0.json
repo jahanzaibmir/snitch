@@ -1,0 +1,401 @@
+{
+  "source": "github.com/jahanzaibmir/snitch",
+  "summary": {
+    "total": 11,
+    "critical": 11,
+    "high": 0,
+    "medium": 0,
+    "low": 0
+  },
+  "categories": {
+    "Cloud": 1,
+    "Source Control": 2,
+    "Database": 2,
+    "Cryptography": 5,
+    "Payment": 1
+  },
+  "stats": {
+    "files_total": 23,
+    "files_scanned": 23,
+    "files_skipped": 0,
+    "bytes_scanned": 0
+  },
+  "findings": [
+    {
+      "id": "c7944181-5a9e-49e1-b9a1-66047e60a030",
+      "fingerprint": "5a42fa2db5d94fe8",
+      "pattern_id": "aws_access_key",
+      "name": "AWS Access Key ID",
+      "category": "Cloud",
+      "severity": "CRITICAL",
+      "file": "test_engine.py",
+      "line": 67,
+      "line_content": "AWS_ACCESS_KEY_ID = \"AKIAIOSFODNN7R3ALKEY\"",
+      "context_before": [
+        "",
+        "# This should be detected — AWS key pattern"
+      ],
+      "context_after": [
+        "AWS_SECRET_ACCESS_KEY = \"wJalrXUtnFEMI/\" + \"K7MDENG/bPxRfiCY4REAL5KEY7\"",
+        ""
+      ],
+      "matched_value": "AKIAIOSFODNN7R3ALKEY",
+      "redacted_value": "AKIA••••••••••••LKEY",
+      "entropy": {
+        "score": 3.6842,
+        "label": "medium",
+        "is_likely_real": true,
+        "charset": "base64",
+        "confidence": "high"
+      },
+      "remediation": "Revoke immediately in AWS IAM console. Rotate and store via AWS Secrets Manager or environment variable.",
+      "in_comment": false,
+      "in_git_history": false,
+      "commit_hash": null,
+      "commit_message": null,
+      "commit_date": null,
+      "commit_author": null
+    },
+    {
+      "id": "94b9116c-57ca-4796-ad52-70dc782e225f",
+      "fingerprint": "3543c50b0cb9cea8",
+      "pattern_id": "github_pat",
+      "name": "GitHub Personal Access Token",
+      "category": "Source Control",
+      "severity": "CRITICAL",
+      "file": "test_engine.py",
+      "line": 71,
+      "line_content": "GITHUB_TOKEN = \"ghp_16C7e42F292c6912E7710c838347Ae178B4a\"",
+      "context_before": [
+        "",
+        "# This should be detected — GitHub token"
+      ],
+      "context_after": [
+        "",
+        "# This should NOT be detected — obvious placeholder"
+      ],
+      "matched_value": "ghp_16C7e42F292c6912E7710c838347Ae178B4a",
+      "redacted_value": "ghp_••••••••••••••••••••••••••••••••8B4a",
+      "entropy": {
+        "score": 4.1439,
+        "label": "high",
+        "is_likely_real": true,
+        "charset": "mixed",
+        "confidence": "high"
+      },
+      "remediation": "Revoke in GitHub → Settings → Developer Settings → Personal access tokens. Use GitHub Actions secrets instead.",
+      "in_comment": false,
+      "in_git_history": false,
+      "commit_hash": null,
+      "commit_message": null,
+      "commit_date": null,
+      "commit_author": null
+    },
+    {
+      "id": "3541ae75-7b2e-4bfe-b57c-e20ebb2a5ffd",
+      "fingerprint": "82d87960056b3ab4",
+      "pattern_id": "db_connection_string",
+      "name": "Database Connection String",
+      "category": "Database",
+      "severity": "CRITICAL",
+      "file": "test_engine.py",
+      "line": 80,
+      "line_content": "DB_URL = \"postgresql://admin:Sup3rS3cr3tP4ssw0rd@db.prod.company.com:5432/mydb\"",
+      "context_before": [
+        "",
+        "# DB connection string — should detect"
+      ],
+      "context_after": [
+        "\"\"\")",
+        ""
+      ],
+      "matched_value": "postgresql://admin:Sup3rS3cr3tP4ssw0rd@db.prod.company.com:5432/mydb",
+      "redacted_value": "post••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••mydb",
+      "entropy": {
+        "score": 4.6722,
+        "label": "high",
+        "is_likely_real": true,
+        "charset": "mixed",
+        "confidence": "high"
+      },
+      "remediation": "Rotate database credentials immediately. Use environment variables or a secrets manager.",
+      "in_comment": false,
+      "in_git_history": false,
+      "commit_hash": null,
+      "commit_message": null,
+      "commit_date": null,
+      "commit_author": null
+    },
+    {
+      "id": "bbea3440-3783-4b0e-ad63-c6da6a601c18",
+      "fingerprint": "3543c50b0cb9cea8",
+      "pattern_id": "github_pat",
+      "name": "GitHub Personal Access Token",
+      "category": "Source Control",
+      "severity": "CRITICAL",
+      "file": "test_engine.py",
+      "line": 120,
+      "line_content": "            f.write('TOKEN = \"ghp_16C7e42F292c6912E7710c838347Ae178B4a\"\\n')",
+      "context_before": [
+        "    with tempfile.TemporaryDirectory() as tmpdir:",
+        "        with open(os.path.join(tmpdir, 'test.py'), 'w') as f:"
+      ],
+      "context_after": [
+        "",
+        "        report = scan_directory(tmpdir)"
+      ],
+      "matched_value": "ghp_16C7e42F292c6912E7710c838347Ae178B4a",
+      "redacted_value": "ghp_••••••••••••••••••••••••••••••••8B4a",
+      "entropy": {
+        "score": 4.1439,
+        "label": "high",
+        "is_likely_real": true,
+        "charset": "mixed",
+        "confidence": "high"
+      },
+      "remediation": "Revoke in GitHub → Settings → Developer Settings → Personal access tokens. Use GitHub Actions secrets instead.",
+      "in_comment": false,
+      "in_git_history": false,
+      "commit_hash": null,
+      "commit_message": null,
+      "commit_date": null,
+      "commit_author": null
+    },
+    {
+      "id": "f4429690-7c60-44a8-8794-e694702fa198",
+      "fingerprint": "8bcac7908eb95041",
+      "pattern_id": "rsa_private_key",
+      "name": "RSA Private Key",
+      "category": "Cryptography",
+      "severity": "CRITICAL",
+      "file": "engine\\patterns.py",
+      "line": 507,
+      "line_content": "        \"regex\": re.compile(r'-----BEGIN RSA PRIVATE KEY-----'),",
+      "context_before": [
+        "        \"id\": \"rsa_private_key\",",
+        "        \"name\": \"RSA Private Key\","
+      ],
+      "context_after": [
+        "        \"severity\": SEVERITY_CRITICAL,",
+        "        \"category\": \"Cryptography\","
+      ],
+      "matched_value": "-----BEGIN RSA PRIVATE KEY-----",
+      "redacted_value": "----•••••••••••••••••••••••----",
+      "entropy": {
+        "score": 3.3823,
+        "label": "medium",
+        "is_likely_real": true,
+        "charset": "mixed",
+        "confidence": "high"
+      },
+      "remediation": "Revoke and regenerate immediately. Never commit private keys to version control.",
+      "in_comment": false,
+      "in_git_history": false,
+      "commit_hash": null,
+      "commit_message": null,
+      "commit_date": null,
+      "commit_author": null
+    },
+    {
+      "id": "e93849d5-7772-48c8-ae78-1e79b86e075a",
+      "fingerprint": "33ea101ddbe7c33b",
+      "pattern_id": "ec_private_key",
+      "name": "EC Private Key",
+      "category": "Cryptography",
+      "severity": "CRITICAL",
+      "file": "engine\\patterns.py",
+      "line": 516,
+      "line_content": "        \"regex\": re.compile(r'-----BEGIN EC PRIVATE KEY-----'),",
+      "context_before": [
+        "        \"id\": \"ec_private_key\",",
+        "        \"name\": \"EC Private Key\","
+      ],
+      "context_after": [
+        "        \"severity\": SEVERITY_CRITICAL,",
+        "        \"category\": \"Cryptography\","
+      ],
+      "matched_value": "-----BEGIN EC PRIVATE KEY-----",
+      "redacted_value": "----••••••••••••••••••••••----",
+      "entropy": {
+        "score": 3.3078,
+        "label": "medium",
+        "is_likely_real": true,
+        "charset": "mixed",
+        "confidence": "high"
+      },
+      "remediation": "Revoke and regenerate. Store in a hardware security module or secrets manager.",
+      "in_comment": false,
+      "in_git_history": false,
+      "commit_hash": null,
+      "commit_message": null,
+      "commit_date": null,
+      "commit_author": null
+    },
+    {
+      "id": "c0e7e393-481b-4b50-a930-285a3123060c",
+      "fingerprint": "03d104c669e3c7b6",
+      "pattern_id": "openssh_private_key",
+      "name": "OpenSSH Private Key",
+      "category": "Cryptography",
+      "severity": "CRITICAL",
+      "file": "engine\\patterns.py",
+      "line": 525,
+      "line_content": "        \"regex\": re.compile(r'-----BEGIN OPENSSH PRIVATE KEY-----'),",
+      "context_before": [
+        "        \"id\": \"openssh_private_key\",",
+        "        \"name\": \"OpenSSH Private Key\","
+      ],
+      "context_after": [
+        "        \"severity\": SEVERITY_CRITICAL,",
+        "        \"category\": \"Cryptography\","
+      ],
+      "matched_value": "-----BEGIN OPENSSH PRIVATE KEY-----",
+      "redacted_value": "----•••••••••••••••••••••••••••----",
+      "entropy": {
+        "score": 3.5872,
+        "label": "medium",
+        "is_likely_real": true,
+        "charset": "mixed",
+        "confidence": "high"
+      },
+      "remediation": "Revoke from all authorized_keys files. Generate a new key pair.",
+      "in_comment": false,
+      "in_git_history": false,
+      "commit_hash": null,
+      "commit_message": null,
+      "commit_date": null,
+      "commit_author": null
+    },
+    {
+      "id": "0ff11070-198e-48ba-a271-852e056f5cce",
+      "fingerprint": "3021d90eb9437b2d",
+      "pattern_id": "pkcs8_private_key",
+      "name": "PKCS#8 Private Key",
+      "category": "Cryptography",
+      "severity": "CRITICAL",
+      "file": "engine\\patterns.py",
+      "line": 534,
+      "line_content": "        \"regex\": re.compile(r'-----BEGIN PRIVATE KEY-----'),",
+      "context_before": [
+        "        \"id\": \"pkcs8_private_key\",",
+        "        \"name\": \"PKCS#8 Private Key\","
+      ],
+      "context_after": [
+        "        \"severity\": SEVERITY_CRITICAL,",
+        "        \"category\": \"Cryptography\","
+      ],
+      "matched_value": "-----BEGIN PRIVATE KEY-----",
+      "redacted_value": "----•••••••••••••••••••----",
+      "entropy": {
+        "score": 3.2003,
+        "label": "medium",
+        "is_likely_real": true,
+        "charset": "mixed",
+        "confidence": "high"
+      },
+      "remediation": "Revoke and regenerate this key immediately.",
+      "in_comment": false,
+      "in_git_history": false,
+      "commit_hash": null,
+      "commit_message": null,
+      "commit_date": null,
+      "commit_author": null
+    },
+    {
+      "id": "e42dfa4b-ff80-466d-9566-40bbc803b484",
+      "fingerprint": "8a1ddaa7dab83b9a",
+      "pattern_id": "pgp_private_key",
+      "name": "PGP Private Key Block",
+      "category": "Cryptography",
+      "severity": "CRITICAL",
+      "file": "engine\\patterns.py",
+      "line": 543,
+      "line_content": "        \"regex\": re.compile(r'-----BEGIN PGP PRIVATE KEY BLOCK-----'),",
+      "context_before": [
+        "        \"id\": \"pgp_private_key\",",
+        "        \"name\": \"PGP Private Key Block\","
+      ],
+      "context_after": [
+        "        \"severity\": SEVERITY_CRITICAL,",
+        "        \"category\": \"Cryptography\","
+      ],
+      "matched_value": "-----BEGIN PGP PRIVATE KEY BLOCK-----",
+      "redacted_value": "----•••••••••••••••••••••••••••••----",
+      "entropy": {
+        "score": 3.6222,
+        "label": "medium",
+        "is_likely_real": true,
+        "charset": "mixed",
+        "confidence": "high"
+      },
+      "remediation": "Revoke this PGP key and generate a new one. Notify all parties that trusted it.",
+      "in_comment": false,
+      "in_git_history": false,
+      "commit_hash": null,
+      "commit_message": null,
+      "commit_date": null,
+      "commit_author": null
+    },
+    {
+      "id": "01066d22-0a0a-4160-9a8f-fa076fd2251a",
+      "fingerprint": "7525c07e69b665cc",
+      "pattern_id": "db_connection_string",
+      "name": "Database Connection String",
+      "category": "Database",
+      "severity": "CRITICAL",
+      "file": "reports/27a841b53e75.json",
+      "line": 75,
+      "line_content": "      \"line_content\": \"DB_URL = \\\"postgresql://admin:Sup3rS3cr3tP4ssw0rd@db.prod.company.com:5432/mydb\\\"\",",
+      "context_before": [],
+      "context_after": [],
+      "matched_value": "postgresql://admin:Sup3rS3cr3tP4ssw0rd@db.prod.company.com:5432/mydb\\",
+      "redacted_value": "post•••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••ydb\\",
+      "entropy": {
+        "score": 4.7138,
+        "label": "high",
+        "is_likely_real": true,
+        "charset": "mixed",
+        "confidence": "high"
+      },
+      "remediation": "Rotate database credentials immediately. Use environment variables or a secrets manager.",
+      "in_comment": false,
+      "in_git_history": true,
+      "commit_hash": "67cfb5d2",
+      "commit_message": "git push",
+      "commit_date": "2026-09-27T01:17:02+05:30",
+      "commit_author": "jahanzaibmir"
+    },
+    {
+      "id": "9f879720-7f6e-4e3c-8a34-569ee428c9c3",
+      "fingerprint": "5836bb6e543e84f2",
+      "pattern_id": "stripe_secret_key",
+      "name": "Stripe Secret Key",
+      "category": "Payment",
+      "severity": "CRITICAL",
+      "file": "reports/27a841b53e75.json",
+      "line": 327,
+      "line_content": "      \"line_content\": \"STRIPE_KEY = \\\"sk_live_Zt3xQw7YpL9mNvK2hRsA8dFgJ1cBuE4o\\\"\",",
+      "context_before": [],
+      "context_after": [],
+      "matched_value": "sk_live_Zt3xQw7YpL9mNvK2hRsA8dFgJ1cBuE4o",
+      "redacted_value": "sk_l••••••••••••••••••••••••••••••••uE4o",
+      "entropy": {
+        "score": 5.1719,
+        "label": "high",
+        "is_likely_real": true,
+        "charset": "mixed",
+        "confidence": "high"
+      },
+      "remediation": "Roll immediately in Stripe Dashboard → Developers → API keys. This key can charge customers.",
+      "in_comment": false,
+      "in_git_history": true,
+      "commit_hash": "67cfb5d2",
+      "commit_message": "git push",
+      "commit_date": "2026-09-27T01:17:02+05:30",
+      "commit_author": "jahanzaibmir"
+    }
+  ],
+  "git_history_scanned": true,
+  "scan_id": "91412e3de5f0",
+  "generated_at": "2026-10-02T12:05:17.379480+00:00"
+}
