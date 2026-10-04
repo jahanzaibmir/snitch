@@ -2,15 +2,7 @@
 Snitch 
 
 
-Snitch — Git History Scanner v2.0
-
-Improvements:
-- Accurate line numbers parsed from @@ hunk headers
-- Real file paths per finding (not [git:hash])
-- Cross-file deduplication of findings already caught in current files
-- Skip binary patch blobs
-- Author and date metadata on every git finding
-- Handles initial commits (NULL_TREE diff)
+Snitch 
 """
 
 import os
