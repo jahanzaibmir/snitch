@@ -25,7 +25,7 @@ MAX_LINE_LENGTH     = 2000               # skip minified / data lines
 
 COMMENT_PREFIXES = ('#', '//', '--', '/*', '*', '"""', "'''", '<!--', ';')
 
-# ENV file pattern: KEY=value (unquoted)
+# ENV file pattern
 _ENV_RE = re.compile(r'^([A-Z][A-Z0-9_]{2,})\s*=\s*(.+)$')
 
 # Lines that look like documentation references (not real secrets)
@@ -34,7 +34,7 @@ _DOC_LINE_RE = re.compile(
 )
 
 
-# ── Finding model ──────────────────────────────────────────────────────────────
+#  Finding model 
 
 def _redact(value: str) -> str:
     if len(value) <= 8:
@@ -94,8 +94,7 @@ def make_finding(
     }
 
 
-#  Path filtering 
-# ── Path filtering ─────────────────────────────────────────────────────────────
+ 
 
 def should_skip_path(path: Path) -> bool:
     parts = set(path.parts)
@@ -121,8 +120,6 @@ def is_binary_file(file_path: Path) -> bool:
         return True
 
 
-#  Line level scanner 
-# ── Line-level scanner ─────────────────────────────────────────────────────────
 
 def scan_line(line: str, line_number: int, file_path: str,
               context_before: list[str] | None = None,
@@ -222,8 +219,7 @@ def pattern_id_is_generic(pid: str) -> bool:
     return pid.startswith("generic_")
 
 
-#  File scanner 
-# ── File scanner ───────────────────────────────────────────────────────────────
+ 
 
 def scan_file(file_path: Path, base_dir: Path) -> list[dict]:
     if should_skip_path(file_path):
@@ -260,8 +256,7 @@ def scan_file(file_path: Path, base_dir: Path) -> list[dict]:
     return findings
 
 
-#  Directory scanner 
-# ── Directory scanner ──────────────────────────────────────────────────────────
+
 
 def scan_directory(directory: str | Path, progress_callback=None) -> dict:
     base_dir = Path(directory).resolve()
@@ -312,8 +307,6 @@ def scan_directory(directory: str | Path, progress_callback=None) -> dict:
     )
 
 
-#  Report builder 
-# ── Report builder ─────────────────────────────────────────────────────────────
 
 def build_report(
     findings: list[dict],
