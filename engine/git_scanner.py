@@ -28,8 +28,7 @@ _HUNK_RE   = re.compile(r'^@@.*?\+(\d+)(?:,(\d+))?')
 _BINARY_RE = re.compile(r'^Binary files? .* differ$|^GIT binary patch')
 
 
-#  Clone helper 
-# ── Clone helper ───────────────────────────────────────────────────────────────
+
 
 def clone_repo(url: str, target_dir: str) -> tuple[bool, str]:
     if not GIT_AVAILABLE:
@@ -48,7 +47,7 @@ def clone_repo(url: str, target_dir: str) -> tuple[bool, str]:
 
 
 #  Main scanner 
-# ── Main scanner ───────────────────────────────────────────────────────────────
+
 
 def scan_git_history(
     repo_path: str | Path,
@@ -113,8 +112,7 @@ def scan_git_history(
     return findings
 
 
-#  Diff helpers 
-# ── Diff helpers ───────────────────────────────────────────────────────────────
+#  Diffe free  helpers 
 
 def _iter_diffs(repo: "git.Repo", commit: "git.Commit"):
     """Yield (file_path, patch_text) for each changed file in a commit."""
@@ -165,7 +163,7 @@ def _added_lines(patch: str):
 
 
 #  Full repo scan 
-# ── Full repo scan (CLI / library use) ────────────────────────────────────────
+
 
 def scan_repo_full(repo_url_or_path: str, progress_callback=None) -> dict:
     from .scanner import scan_directory
