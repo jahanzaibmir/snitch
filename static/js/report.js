@@ -1,9 +1,5 @@
-/* ═══════════════════════════════════════════════════════════
-   Snitch — report dashboard
-   Loads the scan report for SCAN_ID and renders the full UI.
-   Handles: still-running scans, failed scans, missing reports.
-   ═══════════════════════════════════════════════════════════ */
-
+/*
+   Snitch */
 const $ = (id) => document.getElementById(id);
 const SCAN_ID = window.SCAN_ID;
 
