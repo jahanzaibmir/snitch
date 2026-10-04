@@ -28,7 +28,7 @@ async function init() {
   loadReport();
 }
 
-/* ── Live progress (scan still running) ────────────────── */
+
 
 function watchRunningScan(first) {
   updateLoading(first);
@@ -69,7 +69,7 @@ function clampPct(p) {
   return Math.max(1, Math.min(99, Number(p) || 0));
 }
 
-/* ── Load & render ─────────────────────────────────────── */
+
 
 async function loadReport() {
   try {
@@ -112,7 +112,7 @@ function render() {
   renderFindings();
 }
 
-/* ── Header ────────────────────────────────────────────── */
+/*Header  */
 
 function renderHeader() {
   const s = REPORT.summary || {};
@@ -156,8 +156,7 @@ function renderScoreboard() {
   }
 }
 
-/* ── Donut chart (vanilla canvas, no libraries) ────────── */
-
+/* */
 function renderDonut() {
   const canvas = $('donut-chart');
   if (!canvas) return;
@@ -217,7 +216,7 @@ function renderDonut() {
     </div>`).join('');
 }
 
-/* ── Sidebar widgets ───────────────────────────────────── */
+/* Sidebar widgets  */
 
 function renderCategories() {
   const cats = Object.entries(REPORT.categories || {}).sort((a, b) => b[1] - a[1]);
@@ -270,7 +269,7 @@ function renderTopFiles() {
     : '<p class="empty-note">No affected files</p>';
 }
 
-/* ── Findings list ─────────────────────────────────────── */
+/*  Findings list F */
 
 function renderFindings() {
   const findings = REPORT.findings || [];
@@ -379,7 +378,7 @@ function findingBody(f) {
   return html;
 }
 
-/* ── Filtering ─────────────────────────────────────────── */
+/*  Filtering  */
 
 window.setFilter = function (sev, btn) {
   CURRENT_FILTER = sev;
@@ -414,7 +413,7 @@ window.toggleFinding = function (btn) {
   btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
 };
 
-/* ── Helpers ───────────────────────────────────────────── */
+/* Helpers  */
 
 function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({
