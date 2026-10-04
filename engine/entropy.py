@@ -36,7 +36,7 @@ def _charset(value: str) -> str:
 
 
 #  Core entropy calculation 
-# ── Thresholds ─────────────────────────────────────────────────────────────────
+
 
 ENTROPY_HIGH   = 3.8   # Very likely real
 ENTROPY_MEDIUM = 3.0   # Possibly real — medium confidence
@@ -46,7 +46,7 @@ ENTROPY_LOW    = 2.2   # Probably placeholder / dictionary word
 # Adjust the threshold down for them
 ENTROPY_HEX_MEDIUM = 2.4
 
-# ── Character set detection ────────────────────────────────────────────────────
+
 
 _RE_HEX    = re.compile(r'^[0-9a-fA-F]+$')
 _RE_BASE64 = re.compile(r'^[A-Za-z0-9+/=]+$')
@@ -63,7 +63,7 @@ def _charset(value: str) -> str:
     return "mixed"
 
 
-# ── Core entropy calculation ───────────────────────────────────────────────────
+
 
 def shannon_entropy(data: str) -> float:
     """Shannon entropy in bits. H = -Σ p(x) log₂ p(x)."""
@@ -92,12 +92,7 @@ def classify_entropy(value: str, pattern_confidence: str = "medium") -> dict:
     score   = shannon_entropy(value)
     charset = _charset(value)
 
-    # High-confidence patterns 
-    # High-confidence patterns (specific prefixes like ghp_, sk_live_, AKIA...)
-    # still get entropy scored but we DON'T use it to filter them out.
-    # That logic lives in scanner.py.
-
-    # Calibrate thresholds by charset
+     
     hi  = ENTROPY_HIGH
     med = ENTROPY_HEX_MEDIUM if charset == "hex" else ENTROPY_MEDIUM
 
@@ -120,7 +115,7 @@ def classify_entropy(value: str, pattern_confidence: str = "medium") -> dict:
 
 
 #  Placeholder detection 
-# ── Placeholder detection ──────────────────────────────────────────────────────
+
 
 _PLACEHOLDER_KW = [
     # Generic placeholders
@@ -184,7 +179,7 @@ def _is_sequential_run(s: str) -> bool:
 
 
 #  Severity adjustment 
-# ── Severity adjustment ────────────────────────────────────────────────────────
+
 
 _SEV_ORDER = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
 
