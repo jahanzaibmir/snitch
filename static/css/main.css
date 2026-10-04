@@ -45,7 +45,7 @@ input { font-family: inherit; }
 :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .text-input:focus-visible, .filter-search:focus-visible { outline: none; }
 
-/* ── Nav ─────────────────────────────────────────────── */
+/* Nav  */
 
 .nav { position: sticky; top: 0; z-index: 50; background: #FFFFFF; border-bottom: 1px solid var(--hairline); }
 .nav-inner {
@@ -58,7 +58,7 @@ input { font-family: inherit; }
 .nav-links a { border-bottom: 1px solid transparent; padding-bottom: 2px; }
 .nav-links a:hover { color: var(--ink); border-bottom-color: var(--ink); }
 
-/* ── Hero ────────────────────────────────────────────── */
+/*  Hero  */
 
 .hero { padding: 100px 28px 80px; }
 .hero-inner { max-width: 760px; margin: 0 auto; text-align: center; }
@@ -66,7 +66,7 @@ input { font-family: inherit; }
 .accent { color: var(--ink); border-bottom: 6px solid var(--ink); padding-bottom: 2px; }
 .hero-sub { margin: 30px auto 0; max-width: 580px; color: var(--ink-soft); font-size: 18px; }
 
-/* ── Scan card ───────────────────────────────────────── */
+/*  Scan card  */
 
 .scan-card {
   margin: 48px auto 0; max-width: 660px; text-align: left;
